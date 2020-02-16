@@ -1,7 +1,6 @@
 import React from "react"
 import ProjectAppBar from "./ProjectAppBar.js"
 import MapboxGLMap from "./MapboxGLMap.js"
-import logo from "./logo.svg"
 import "./App.css"
 
 function App() {
