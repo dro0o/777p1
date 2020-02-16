@@ -4,7 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 
 const styles = {
   width: "100vw",
-  height: "calc(100vh - 80px)",
+  height: "calc(100vh - 64px)",
   position: "absolute"
 }
 

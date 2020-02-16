@@ -1,13 +1,16 @@
 import React from "react"
-import mapboxgl from "mapbox-gl"
+import ProjectAppBar from "./ProjectAppBar.js"
 import MapboxGLMap from "./MapboxGLMap.js"
 import logo from "./logo.svg"
 import "./App.css"
 
-mapboxgl.accessToken = ""
-
 function App() {
-  return <MapboxGLMap />
+  return (
+    <div>
+      <ProjectAppBar />
+      <MapboxGLMap />
+    </div>
+  )
 }
 
 export default App
