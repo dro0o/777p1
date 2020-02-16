@@ -10,9 +10,9 @@ const styles = {
 
 const MapboxGLMap = () => {
   const [map, setMap] = useState(null)
-  const [lat, setLat] = useState(34)
-  const [lng, setLng] = useState(40)
-  const [zoom, setZoom] = useState(2)
+  const [lat, setLat] = useState(44.5)
+  const [lng, setLng] = useState(-89.8)
+  const [zoom, setZoom] = useState(6.5)
   const mapContainer = useRef(null)
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const MapboxGLMap = () => {
     const initializeMap = ({ setMap, mapContainer }) => {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v11", // stylesheet location
+        style: "mapbox://styles/mapbox/dark-v10", // stylesheet location
         center: [lng, lat],
         zoom: zoom
       })

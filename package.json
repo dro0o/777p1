@@ -9,7 +9,8 @@
     "mapbox-gl": "^1.7.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-scripts": "3.4.0"
+    "react-scripts": "3.4.0",
+    "yarn": "^1.22.0"
   },
   "scripts": {
     "start": "react-scripts start",
