@@ -23,7 +23,7 @@ shp(process.env.PUBLIC_URL + "/shp/cancer_county.zip").then(
     console.log("cancer county: ", geojsonCancerCounty)
   },
   function(err) {
-    console.log(err)
+    console.log("error:", err)
   }
 )
 shp(process.env.PUBLIC_URL + "/shp/cancer_tracts.zip").then(
