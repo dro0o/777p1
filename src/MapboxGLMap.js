@@ -11,7 +11,7 @@ const styles = {
 const MapboxGLMap = () => {
   const [map, setMap] = useState(null)
   const [lat, setLat] = useState(44.5)
-  const [lng, setLng] = useState(-89.8)
+  const [lng, setLng] = useState(-90)
   const [zoom, setZoom] = useState(6.5)
   const mapContainer = useRef(null)
 
