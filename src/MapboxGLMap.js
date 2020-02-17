@@ -15,7 +15,7 @@ shp(process.env.PUBLIC_URL + "/shp/well_nitrate.zip").then(
     console.log("well nitrate: ", geojsonWellNitrate)
   },
   function(err) {
-    console.log(err)
+    console.log("error:", err)
   }
 )
 shp(process.env.PUBLIC_URL + "/shp/cancer_county.zip").then(
