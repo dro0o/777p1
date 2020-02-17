@@ -31,7 +31,7 @@ shp(process.env.PUBLIC_URL + "/shp/cancer_tracts.zip").then(
     console.log("cancer tracts: ", geojsonCancerTracts)
   },
   function(err) {
-    console.log(err)
+    console.log("error:", err)
   }
 )
 
