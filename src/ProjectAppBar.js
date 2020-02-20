@@ -42,10 +42,10 @@ const useStyles = makeStyles(uwTheme => ({
     color: "#fff"
   },
   card: {
-    maxWidth: 420
+    maxWidth: 450
   },
   media: {
-    height: 140
+    height: 300
   }
 }))
 
@@ -109,8 +109,8 @@ export default function PrimarySearchAppBar() {
             <CardActionArea>
               <CardMedia
                 className={classes.media}
-                image="nitrate_personal.png"
-                title="Contemplative Reptile"
+                image="water.jpg"
+                title="nitrate explosion"
               />
               <CardContent>
                 <Typography gutterBottom variant="h5" component="h2">
