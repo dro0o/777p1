@@ -325,8 +325,58 @@ const MapboxGLMap = () => {
   }, [map])
 
   const recalcIDW = value => {
-    var geojsonWellNitrate = map.getSource("well-nitrate-data")
-    console.log(geojsonWellNitrate)
+    var geojsonWellNitrate = map.getSource("well-nitrate-data")._data
+
+    // IDW Initialization based on k=value
+    var options = {
+      gridType: "triangle",
+      property: "nitr_con",
+      units: "miles",
+      weight: value
+    }
+
+    var triangleGrid = interpolate(geojsonWellNitrate, 7, options)
+
+    map.removeLayer("idw-data")
+    map.removeSource("idw-data")
+    map.addSource("idw-data", {
+      type: "geojson",
+      data: triangleGrid
+    })
+
+    map.addLayer({
+      id: "idw-data",
+      type: "fill-extrusion",
+      source: "idw-data",
+      layout: {
+        visibility: "visible"
+      },
+      paint: {
+        "fill-extrusion-color": [
+          "interpolate",
+          ["linear"],
+          ["get", "nitr_con"],
+          0,
+          "#282728",
+          8,
+          "#B42222",
+          16,
+          "#fff"
+        ],
+        "fill-extrusion-height": [
+          "interpolate",
+          ["linear"],
+          ["get", "nitr_con"],
+          0,
+          -10000,
+          16,
+          250000
+        ],
+        "fill-extrusion-base": 0,
+        "fill-extrusion-opacity": 0.7
+      }
+    })
+    setActiveIDW(true)
   }
 
   const clickWN = () => {
@@ -373,7 +423,7 @@ const MapboxGLMap = () => {
   const handleInputChange = event => {
     setKValue(event.target.value === "" ? "" : Number(event.target.value))
     if (event.target.value !== "") {
-      recalcIDW(event.target.value)
+      recalcIDW(Number(event.target.value))
     }
   }
 
