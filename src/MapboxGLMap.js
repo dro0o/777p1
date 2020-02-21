@@ -23,7 +23,10 @@ import {
 import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import shp from "shpjs"
+
 import interpolate from "@turf/interpolate"
+import worker from "workerize-loader!./work" // eslint-disable-line import/no-webpack-loader-syntax
+var workerInstance = worker()
 
 const styles = {
   width: "100vw",
@@ -335,48 +338,58 @@ const MapboxGLMap = () => {
       weight: value
     }
 
-    var triangleGrid = interpolate(geojsonWellNitrate, 7, options)
+    workerInstance.terminate()
+    workerInstance = worker()
+    var triangleGrid
 
-    map.removeLayer("idw-data")
-    map.removeSource("idw-data")
-    map.addSource("idw-data", {
-      type: "geojson",
-      data: triangleGrid
-    })
+    workerInstance.addEventListener("message", message => {
+      if (message.data.type === "FeatureCollection") {
+        triangleGrid = message.data
 
-    map.addLayer({
-      id: "idw-data",
-      type: "fill-extrusion",
-      source: "idw-data",
-      layout: {
-        visibility: "visible"
-      },
-      paint: {
-        "fill-extrusion-color": [
-          "interpolate",
-          ["linear"],
-          ["get", "nitr_con"],
-          0,
-          "#282728",
-          8,
-          "#B42222",
-          16,
-          "#fff"
-        ],
-        "fill-extrusion-height": [
-          "interpolate",
-          ["linear"],
-          ["get", "nitr_con"],
-          0,
-          -10000,
-          16,
-          250000
-        ],
-        "fill-extrusion-base": 0,
-        "fill-extrusion-opacity": 0.7
+        map.removeLayer("idw-data")
+        map.removeSource("idw-data")
+        map.addSource("idw-data", {
+          type: "geojson",
+          data: triangleGrid
+        })
+
+        map.addLayer({
+          id: "idw-data",
+          type: "fill-extrusion",
+          source: "idw-data",
+          layout: {
+            visibility: "visible"
+          },
+          paint: {
+            "fill-extrusion-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "nitr_con"],
+              0,
+              "#282728",
+              8,
+              "#B42222",
+              16,
+              "#fff"
+            ],
+            "fill-extrusion-height": [
+              "interpolate",
+              ["linear"],
+              ["get", "nitr_con"],
+              0,
+              -10000,
+              16,
+              250000
+            ],
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.7
+          }
+        })
+        setActiveIDW(true)
       }
     })
-    setActiveIDW(true)
+
+    workerInstance.calcStuff(geojsonWellNitrate, 7, options)
   }
 
   const clickWN = () => {
