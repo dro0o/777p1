@@ -7,13 +7,15 @@ import {
   ButtonGroup,
   Grid,
   Slider,
-  Input
+  Input,
+  LinearProgress
 } from "@material-ui/core"
 import FitnessCenterIcon from "@material-ui/icons/FitnessCenter"
 import LocalDrinkIcon from "@material-ui/icons/LocalDrink"
 import HomeWorkIcon from "@material-ui/icons/HomeWork"
 import BlurCircularIcon from "@material-ui/icons/BlurCircular"
 import MultilineChartIcon from "@material-ui/icons/MultilineChart"
+import ChangeHistoryIcon from "@material-ui/icons/ChangeHistory"
 import {
   makeStyles,
   withStyles,
@@ -65,6 +67,11 @@ const useStyles = makeStyles(uwTheme2 => ({
   },
   input: {
     width: 40
+  },
+  loading: {
+    width: "100%",
+    position: "absolute",
+    bottom: 0
   }
 }))
 
@@ -139,6 +146,8 @@ const MapboxGLMap = () => {
   const [activeIDW, setActiveIDW] = useState(false)
   const [activeSR, setActiveSR] = useState(false)
   const [kValue, setKValue] = React.useState(2)
+  const [sizeValue, setSizeValue] = React.useState(10)
+  const [loading, setLoading] = React.useState(false)
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
@@ -240,45 +249,66 @@ const MapboxGLMap = () => {
               weight: kValue
             }
 
-            var triangleGrid = interpolate(geojsonWellNitrate, 7, options)
+            // IDW Initialization based on k=value
+            var options = {
+              gridType: "triangle",
+              property: "nitr_con",
+              units: "kilometers",
+              weight: kValue
+            }
 
-            map.addSource("idw-data", {
-              type: "geojson",
-              data: triangleGrid
-            })
+            var triangleGrid
 
-            map.addLayer({
-              id: "idw-data",
-              type: "fill-extrusion",
-              source: "idw-data",
-              layout: {
-                visibility: "none"
-              },
-              paint: {
-                "fill-extrusion-color": [
-                  "interpolate",
-                  ["linear"],
-                  ["get", "nitr_con"],
-                  0,
-                  "#282728",
-                  8,
-                  "#B42222",
-                  16,
-                  "#fff"
-                ],
-                "fill-extrusion-height": [
-                  "interpolate",
-                  ["linear"],
-                  ["get", "nitr_con"],
-                  0,
-                  -10000,
-                  16,
-                  250000
-                ],
-                "fill-extrusion-base": 0,
-                "fill-extrusion-opacity": 0.7
+            workerInstance.addEventListener("message", message => {
+              if (message.data.type === "FeatureCollection") {
+                triangleGrid = message.data
+
+                if (map.getLayer("idw-data") !== undefined) {
+                  map.removeLayer("idw-data")
+                  map.removeSource("idw-data")
+                }
+
+                map.addSource("idw-data", {
+                  type: "geojson",
+                  data: triangleGrid
+                })
+
+                map.addLayer({
+                  id: "idw-data",
+                  type: "fill-extrusion",
+                  source: "idw-data",
+                  layout: {
+                    visibility: "visible"
+                  },
+                  paint: {
+                    "fill-extrusion-color": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      "#282728",
+                      8,
+                      "#B42222",
+                      16,
+                      "#fff"
+                    ],
+                    "fill-extrusion-height": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      -10000,
+                      16,
+                      250000
+                    ],
+                    "fill-extrusion-base": 0,
+                    "fill-extrusion-opacity": 0.7
+                  }
+                })
+                setActiveIDW(true)
               }
             })
+            workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
           },
           function(err) {
             console.log("error:", err)
@@ -327,15 +357,15 @@ const MapboxGLMap = () => {
     if (!map) initializeMap({ setMap, mapContainer })
   }, [map])
 
-  const recalcIDW = value => {
+  const calcIDW = (kValue, sizeValue) => {
     var geojsonWellNitrate = map.getSource("well-nitrate-data")._data
 
     // IDW Initialization based on k=value
     var options = {
       gridType: "triangle",
       property: "nitr_con",
-      units: "miles",
-      weight: value
+      units: "kilometers",
+      weight: kValue
     }
 
     workerInstance.terminate()
@@ -346,8 +376,11 @@ const MapboxGLMap = () => {
       if (message.data.type === "FeatureCollection") {
         triangleGrid = message.data
 
-        map.removeLayer("idw-data")
-        map.removeSource("idw-data")
+        if (map.getLayer("idw-data") !== undefined) {
+          map.removeLayer("idw-data")
+          map.removeSource("idw-data")
+        }
+
         map.addSource("idw-data", {
           type: "geojson",
           data: triangleGrid
@@ -386,10 +419,10 @@ const MapboxGLMap = () => {
           }
         })
         setActiveIDW(true)
+        setLoading(false)
       }
     })
-
-    workerInstance.calcStuff(geojsonWellNitrate, 7, options)
+    workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
   }
 
   const clickWN = () => {
@@ -428,15 +461,31 @@ const MapboxGLMap = () => {
     )
   }
 
-  const handleSliderChange = (event, newValue) => {
+  const handleKSliderChange = (event, newValue) => {
+    setLoading(true)
     setKValue(newValue)
-    recalcIDW(newValue)
+    calcIDW(newValue, sizeValue)
   }
 
-  const handleInputChange = event => {
+  const handleKInputChange = event => {
+    setLoading(true)
     setKValue(event.target.value === "" ? "" : Number(event.target.value))
     if (event.target.value !== "") {
-      recalcIDW(Number(event.target.value))
+      calcIDW(Number(event.target.value), sizeValue)
+    }
+  }
+
+  const handleSizeSliderChange = (event, newValue) => {
+    setLoading(true)
+    setSizeValue(newValue)
+    calcIDW(kValue, newValue)
+  }
+
+  const handleSizeInputChange = event => {
+    setLoading(true)
+    setSizeValue(event.target.value === "" ? "" : Number(event.target.value))
+    if (event.target.value !== "") {
+      calcIDW(kValue, Number(event.target.value))
     }
   }
 
@@ -524,10 +573,10 @@ const MapboxGLMap = () => {
                   <Grid item xs>
                     <Slider
                       value={typeof kValue === "number" ? kValue : 0}
-                      onChange={handleSliderChange}
+                      onChange={handleKSliderChange}
                       aria-labelledby="input-slider"
                       step={0.2}
-                      min={0}
+                      min={1}
                       max={5}
                     />
                   </Grid>
@@ -536,11 +585,11 @@ const MapboxGLMap = () => {
                       className={classes.input}
                       value={kValue}
                       margin="dense"
-                      onChange={handleInputChange}
+                      onChange={handleKInputChange}
                       onBlur={handleBlur}
                       inputProps={{
                         step: 0.2,
-                        min: 0,
+                        min: 1,
                         max: 5,
                         type: "number",
                         "aria-labelledby": "input-slider"
@@ -549,8 +598,49 @@ const MapboxGLMap = () => {
                   </Grid>
                 </Grid>
               </div>
+              <Typography
+                className={classes.typeBold}
+                variant="subtitle2"
+                align="right"
+              >
+                Triangle Size (sqkm)
+              </Typography>
+              <div className={classes.kslider}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item>
+                    <ChangeHistoryIcon />
+                  </Grid>
+                  <Grid item xs>
+                    <Slider
+                      value={typeof sizeValue === "number" ? sizeValue : 0}
+                      onChange={handleSizeSliderChange}
+                      aria-labelledby="input-s-slider"
+                      step={5}
+                      min={5}
+                      max={35}
+                    />
+                  </Grid>
+                  <Grid item style={{ paddingRight: 0 }}>
+                    <Input
+                      className={classes.input}
+                      value={sizeValue}
+                      margin="dense"
+                      onChange={handleSizeInputChange}
+                      onBlur={handleBlur}
+                      inputProps={{
+                        step: 5,
+                        min: 5,
+                        max: 35,
+                        type: "number",
+                        "aria-labelledby": "input-s-slider"
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </div>
             </CardContent>
           </Card>
+          <div className={classes.loading}>{loading && <LinearProgress />}</div>
         </ThemeProvider>
       </div>
     </div>
