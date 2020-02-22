@@ -52,7 +52,7 @@ const useStyles = makeStyles(uwTheme => ({
 const uwTheme = createMuiTheme({
   palette: {
     primary: {
-      main: "#c5050c"
+      main: "#252525"
     },
     secondary: {
       main: "#9b0000"

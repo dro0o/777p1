@@ -26,7 +26,6 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import shp from "shpjs"
 
-import interpolate from "@turf/interpolate"
 import worker from "workerize-loader!./work" // eslint-disable-line import/no-webpack-loader-syntax
 var workerInstance = worker()
 
@@ -78,7 +77,7 @@ const useStyles = makeStyles(uwTheme2 => ({
 const StyledButton = withStyles({
   root: {
     borderRadius: 3,
-    boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)"
+    boxShadow: "0 3px 5px 2px rgba(99, 99, 99, .3)"
   },
   label: {
     textTransform: "capitalize"
@@ -88,7 +87,7 @@ const StyledButton = withStyles({
 const uwTheme2 = createMuiTheme({
   palette: {
     primary: {
-      main: "#c5050c"
+      main: "#636363"
     },
     secondary: {
       main: "#dadfe1"
@@ -127,7 +126,6 @@ const MapboxGLMap = () => {
   const mapContainer = useRef(null)
   const [activeWN, setActiveWN] = useState(true)
   const [activeCT, setActiveCT] = useState(true)
-  const [activeIDW, setActiveIDW] = useState(false)
   const [activeSR, setActiveSR] = useState(false)
   const [kValue, setKValue] = React.useState(2)
   const [sizeValue, setSizeValue] = React.useState(10)
@@ -184,6 +182,7 @@ const MapboxGLMap = () => {
               type: "geojson",
               data: geojsonCancerTracts
             })
+            console.log("tracts!")
 
             map.addLayer(
               {
@@ -191,8 +190,24 @@ const MapboxGLMap = () => {
                 type: "fill",
                 source: "cancer-tracts-data",
                 paint: {
-                  "fill-color": "#f7f7f7",
-                  "fill-opacity": 0.1
+                  "fill-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["get", "canrate"],
+                    0,
+                    "#542788",
+                    0.07,
+                    "#998ec3",
+                    0.14,
+                    "#d8daeb",
+                    0.21,
+                    "#fecc5c",
+                    0.28,
+                    "#fd8d3c",
+                    0.35,
+                    "#f03b20"
+                  ],
+                  "fill-opacity": 0.3
                 },
                 filter: ["==", "$type", "Polygon"]
               },
@@ -210,6 +225,7 @@ const MapboxGLMap = () => {
               type: "geojson",
               data: geojsonWellNitrate
             })
+            console.log("nitrates!")
 
             map.addLayer(
               {
@@ -218,26 +234,34 @@ const MapboxGLMap = () => {
                 source: "well-nitrate-data",
                 paint: {
                   "circle-radius": 4,
-                  "circle-color": "#B42222"
+                  "circle-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["get", "nitr_con"],
+                    0,
+                    "#2166ac",
+                    3.2,
+                    "#67a9cf",
+                    6.4,
+                    "#d1e5f0",
+                    9.6,
+                    "#fddbc7",
+                    12.8,
+                    "#ef8a62",
+                    16,
+                    "#b2182b"
+                  ]
                 },
                 filter: ["==", "$type", "Point"]
               },
               firstSymbolId
             )
 
-            // IDW Initialization based on k=2
+            // SR Initialization based on k=2
             var options = {
               gridType: "triangle",
               property: "nitr_con",
               units: "miles",
-              weight: kValue
-            }
-
-            // IDW Initialization based on k=value
-            var options = {
-              gridType: "triangle",
-              property: "nitr_con",
-              units: "kilometers",
               weight: kValue
             }
 
@@ -247,22 +271,22 @@ const MapboxGLMap = () => {
               if (message.data.type === "FeatureCollection") {
                 triangleGrid = message.data
 
-                if (map.getLayer("idw-data") !== undefined) {
-                  map.removeLayer("idw-data")
-                  map.removeSource("idw-data")
+                if (map.getLayer("spatial-regression-data") !== undefined) {
+                  map.removeLayer("spatial-regression-data")
+                  map.removeSource("spatial-regression-data")
                 }
 
-                map.addSource("idw-data", {
+                map.addSource("spatial-regression-data", {
                   type: "geojson",
                   data: triangleGrid
                 })
 
                 map.addLayer({
-                  id: "idw-data",
+                  id: "spatial-regression-data",
                   type: "fill-extrusion",
-                  source: "idw-data",
+                  source: "spatial-regression-data",
                   layout: {
-                    visibility: "visible"
+                    visibility: "none"
                   },
                   paint: {
                     "fill-extrusion-color": [
@@ -289,7 +313,6 @@ const MapboxGLMap = () => {
                     "fill-extrusion-opacity": 0.7
                   }
                 })
-                setActiveIDW(true)
               }
             })
             workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
@@ -298,8 +321,6 @@ const MapboxGLMap = () => {
             console.log("error:", err)
           }
         )
-
-        // IDW Layer Calc and Add
 
         // Create a popup, but don't add it to the map yet.
         var popup = new mapboxgl.Popup({
@@ -310,7 +331,6 @@ const MapboxGLMap = () => {
         map.on("mouseenter", "well-nitrate-data", function(e) {
           // Change the cursor style as a UI indicator.
           map.getCanvas().style.cursor = "pointer"
-
           var coordinates = e.features[0].geometry.coordinates.slice()
           var nitrate_value = e.features[0].properties.nitr_con
           var body =
@@ -335,16 +355,55 @@ const MapboxGLMap = () => {
           map.getCanvas().style.cursor = ""
           popup.remove()
         })
+
+        // Add tooltip on mouse move
+        // Deconflict between layers within this function
+        map.on("mousemove", function(e) {
+          // Change the cursor style as a UI indicator.
+          map.getCanvas().style.cursor = "pointer"
+          var features = map.queryRenderedFeatures(e.point)
+
+          // Populate the popup and set its coordinates
+          // based on the feature found.
+          const setPopUp = (coordinates, body) => {
+            popup
+              .setLngLat(coordinates)
+              .setHTML(body)
+              .addTo(map)
+          }
+
+          var coordinates = [e.lngLat.lng, e.lngLat.lat]
+          if (features[0].layer.id === "well-nitrate-data") {
+            var data_value = features[0].properties.nitr_con
+            var body =
+              "Nitrate Value: <strong>" +
+              data_value.toFixed(2) +
+              " mg/L</strong>"
+            setPopUp(coordinates, body)
+          } else if (features[0].layer.id === "cancer-tracts-data") {
+            var data_value = features[0].properties.canrate * 100
+            var body =
+              "Cancer Rate: <strong>" + data_value.toFixed(1) + "%</strong>"
+            setPopUp(coordinates, body)
+          }
+
+          // Ensure that if the map is zoomed out such that multiple
+          // copies of the feature are visible, the popup appears
+          // over the copy being pointed to.
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+          }
+        })
       })
     }
 
     if (!map) initializeMap({ setMap, mapContainer })
   }, [map])
 
-  const calcIDW = (kValue, sizeValue) => {
+  const calcSR = (kValue, sizeValue) => {
     var geojsonWellNitrate = map.getSource("well-nitrate-data")._data
 
-    // IDW Initialization based on k=value
+    // SR Initialization based on k=value
     var options = {
       gridType: "triangle",
       property: "nitr_con",
@@ -360,20 +419,20 @@ const MapboxGLMap = () => {
       if (message.data.type === "FeatureCollection") {
         triangleGrid = message.data
 
-        if (map.getLayer("idw-data") !== undefined) {
-          map.removeLayer("idw-data")
-          map.removeSource("idw-data")
+        if (map.getLayer("spatial-regression-data") !== undefined) {
+          map.removeLayer("spatial-regression-data")
+          map.removeSource("spatial-regression-data")
         }
 
-        map.addSource("idw-data", {
+        map.addSource("spatial-regression-data", {
           type: "geojson",
           data: triangleGrid
         })
 
         map.addLayer({
-          id: "idw-data",
+          id: "spatial-regression-data",
           type: "fill-extrusion",
-          source: "idw-data",
+          source: "spatial-regression-data",
           layout: {
             visibility: "visible"
           },
@@ -402,7 +461,7 @@ const MapboxGLMap = () => {
             "fill-extrusion-opacity": 0.7
           }
         })
-        setActiveIDW(true)
+        setActiveSR(true)
         setLoading(false)
       }
     })
@@ -427,15 +486,6 @@ const MapboxGLMap = () => {
     )
   }
 
-  const clickIDW = () => {
-    activeIDW ? setActiveIDW(false) : setActiveIDW(true)
-    map.setLayoutProperty(
-      "idw-data",
-      "visibility",
-      activeIDW ? "none" : "visible"
-    )
-  }
-
   const clickSR = () => {
     activeSR ? setActiveSR(false) : setActiveSR(true)
     map.setLayoutProperty(
@@ -448,28 +498,28 @@ const MapboxGLMap = () => {
   const handleKSliderChange = (event, newValue) => {
     setLoading(true)
     setKValue(newValue)
-    calcIDW(newValue, sizeValue)
+    calcSR(newValue, sizeValue)
   }
 
   const handleKInputChange = event => {
     setLoading(true)
     setKValue(event.target.value === "" ? "" : Number(event.target.value))
     if (event.target.value !== "") {
-      calcIDW(Number(event.target.value), sizeValue)
+      calcSR(Number(event.target.value), sizeValue)
     }
   }
 
   const handleSizeSliderChange = (event, newValue) => {
     setLoading(true)
     setSizeValue(newValue)
-    calcIDW(kValue, newValue)
+    calcSR(kValue, newValue)
   }
 
   const handleSizeInputChange = event => {
     setLoading(true)
     setSizeValue(event.target.value === "" ? "" : Number(event.target.value))
     if (event.target.value !== "") {
-      calcIDW(kValue, Number(event.target.value))
+      calcSR(kValue, Number(event.target.value))
     }
   }
 
@@ -512,31 +562,23 @@ const MapboxGLMap = () => {
                 <StyledButton
                   color={activeWN ? "primary" : "secondary"}
                   onClick={clickWN}
-                  startIcon={<LocalDrinkIcon />}
-                  endIcon={<LocalDrinkIcon />}
+                  startIcon={<LocalDrinkIcon style={{ fill: "#2166ac" }} />}
+                  endIcon={<LocalDrinkIcon style={{ fill: "#b2182b" }} />}
                 >
                   Well Nitrate Data
                 </StyledButton>
                 <StyledButton
                   color={activeCT ? "primary" : "secondary"}
                   onClick={clickCT}
-                  startIcon={<HomeWorkIcon />}
-                  endIcon={<HomeWorkIcon />}
+                  startIcon={<HomeWorkIcon style={{ fill: "#542788" }} />}
+                  endIcon={<HomeWorkIcon style={{ fill: "#f03b20" }} />}
                 >
                   Census Tract Data
                 </StyledButton>
                 <StyledButton
-                  color={activeIDW ? "primary" : "secondary"}
-                  onClick={clickIDW}
-                  startIcon={<BlurCircularIcon />}
-                  endIcon={<BlurCircularIcon />}
-                >
-                  IDW Aggregation
-                </StyledButton>
-                <StyledButton
                   color={activeSR ? "primary" : "secondary"}
                   onClick={clickSR}
-                  startIcon={<MultilineChartIcon />}
+                  startIcon={<BlurCircularIcon />}
                   endIcon={<MultilineChartIcon />}
                 >
                   Spatial Regression
