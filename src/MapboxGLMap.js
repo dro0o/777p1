@@ -176,151 +176,169 @@ const MapboxGLMap = () => {
           }
         }
 
-        shp(process.env.PUBLIC_URL + "/shp/cancer_tracts.zip").then(
-          function(geojsonCancerTracts) {
-            map.addSource("cancer-tracts-data", {
-              type: "geojson",
-              data: geojsonCancerTracts
-            })
-            console.log("tracts!")
+        // Function that returns a promise that resolves to a geojson of cancer tracts
+        function resolveCancerTracts() {
+          return shp(process.env.PUBLIC_URL + "/shp/cancer_tracts.zip").then(
+            function(geojsonCancerTracts) {
+              map.addSource("cancer-tracts-data", {
+                type: "geojson",
+                data: geojsonCancerTracts
+              })
 
-            map.addLayer(
-              {
-                id: "cancer-tracts-data",
-                type: "fill",
-                source: "cancer-tracts-data",
-                paint: {
-                  "fill-color": [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "canrate"],
-                    0,
-                    "#542788",
-                    0.07,
-                    "#998ec3",
-                    0.14,
-                    "#d8daeb",
-                    0.21,
-                    "#fecc5c",
-                    0.28,
-                    "#fd8d3c",
-                    0.35,
-                    "#f03b20"
-                  ],
-                  "fill-opacity": 0.3
+              map.addLayer(
+                {
+                  id: "cancer-tracts-data",
+                  type: "fill",
+                  source: "cancer-tracts-data",
+                  paint: {
+                    "fill-color": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "canrate"],
+                      0,
+                      "#542788",
+                      0.1,
+                      "#998ec3",
+                      0.2,
+                      "#d8daeb",
+                      0.3,
+                      "#fecc5c",
+                      0.5,
+                      "#fd8d3c",
+                      0.8,
+                      "#f03b20"
+                    ],
+                    "fill-opacity": 0.3
+                  },
+                  filter: ["==", "$type", "Polygon"]
                 },
-                filter: ["==", "$type", "Polygon"]
-              },
-              "well-nitrate-data"
-            )
-          },
-          function(err) {
-            console.log("error:", err)
+                "well-nitrate-data"
+              )
+
+              return geojsonCancerTracts
+            },
+            function(err) {
+              console.log("error:", err)
+            }
+          )
+        }
+
+        // Function that returns a promise that resolves to a geojson of nitrate points
+        function resolveNitratePoints() {
+          return shp(process.env.PUBLIC_URL + "/shp/well_nitrate.zip").then(
+            function(geojsonWellNitrate) {
+              map.addSource("well-nitrate-data", {
+                type: "geojson",
+                data: geojsonWellNitrate
+              })
+
+              map.addLayer(
+                {
+                  id: "well-nitrate-data",
+                  type: "circle",
+                  source: "well-nitrate-data",
+                  paint: {
+                    "circle-radius": 4,
+                    "circle-color": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      "#2166ac",
+                      3.4,
+                      "#67a9cf",
+                      7.8,
+                      "#d1e5f0",
+                      10.5,
+                      "#fddbc7",
+                      12.5,
+                      "#ef8a62",
+                      17,
+                      "#b2182b"
+                    ]
+                  },
+                  filter: ["==", "$type", "Point"]
+                },
+                firstSymbolId
+              )
+
+              return geojsonWellNitrate
+            },
+            function(err) {
+              console.log("error:", err)
+            }
+          )
+        }
+
+        async function resolveSpatialRegression() {
+          // Asynchronously request both geojson feature collections
+          const [geojsonWellNitrate, geojsonCancerTracts] = await Promise.all([
+            resolveNitratePoints(),
+            resolveCancerTracts()
+          ])
+
+          // Prepare spatial regression options based on k State value
+          var options = {
+            gridType: "triangle",
+            property: "nitr_con",
+            units: "miles",
+            weight: kValue
           }
-        )
 
-        shp(process.env.PUBLIC_URL + "/shp/well_nitrate.zip").then(
-          function(geojsonWellNitrate) {
-            map.addSource("well-nitrate-data", {
-              type: "geojson",
-              data: geojsonWellNitrate
-            })
-            console.log("nitrates!")
+          var triangleGrid
 
-            map.addLayer(
-              {
-                id: "well-nitrate-data",
-                type: "circle",
-                source: "well-nitrate-data",
+          workerInstance.addEventListener("message", message => {
+            if (message.data.type === "FeatureCollection") {
+              triangleGrid = message.data
+
+              if (map.getLayer("spatial-regression-data") !== undefined) {
+                map.removeLayer("spatial-regression-data")
+                map.removeSource("spatial-regression-data")
+              }
+
+              map.addSource("spatial-regression-data", {
+                type: "geojson",
+                data: triangleGrid
+              })
+
+              map.addLayer({
+                id: "spatial-regression-data",
+                type: "fill-extrusion",
+                source: "spatial-regression-data",
+                layout: {
+                  visibility: "none"
+                },
                 paint: {
-                  "circle-radius": 4,
-                  "circle-color": [
+                  "fill-extrusion-color": [
                     "interpolate",
                     ["linear"],
                     ["get", "nitr_con"],
                     0,
-                    "#2166ac",
-                    3.2,
-                    "#67a9cf",
-                    6.4,
-                    "#d1e5f0",
-                    9.6,
-                    "#fddbc7",
-                    12.8,
-                    "#ef8a62",
+                    "#282728",
+                    8,
+                    "#B42222",
                     16,
-                    "#b2182b"
-                  ]
-                },
-                filter: ["==", "$type", "Point"]
-              },
-              firstSymbolId
-            )
-
-            // SR Initialization based on k=2
-            var options = {
-              gridType: "triangle",
-              property: "nitr_con",
-              units: "miles",
-              weight: kValue
-            }
-
-            var triangleGrid
-
-            workerInstance.addEventListener("message", message => {
-              if (message.data.type === "FeatureCollection") {
-                triangleGrid = message.data
-
-                if (map.getLayer("spatial-regression-data") !== undefined) {
-                  map.removeLayer("spatial-regression-data")
-                  map.removeSource("spatial-regression-data")
+                    "#fff"
+                  ],
+                  "fill-extrusion-height": [
+                    "interpolate",
+                    ["linear"],
+                    ["get", "nitr_con"],
+                    0,
+                    -10000,
+                    16,
+                    250000
+                  ],
+                  "fill-extrusion-base": 0,
+                  "fill-extrusion-opacity": 0.7
                 }
+              })
+            }
+          })
+          workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
+        }
 
-                map.addSource("spatial-regression-data", {
-                  type: "geojson",
-                  data: triangleGrid
-                })
-
-                map.addLayer({
-                  id: "spatial-regression-data",
-                  type: "fill-extrusion",
-                  source: "spatial-regression-data",
-                  layout: {
-                    visibility: "none"
-                  },
-                  paint: {
-                    "fill-extrusion-color": [
-                      "interpolate",
-                      ["linear"],
-                      ["get", "nitr_con"],
-                      0,
-                      "#282728",
-                      8,
-                      "#B42222",
-                      16,
-                      "#fff"
-                    ],
-                    "fill-extrusion-height": [
-                      "interpolate",
-                      ["linear"],
-                      ["get", "nitr_con"],
-                      0,
-                      -10000,
-                      16,
-                      250000
-                    ],
-                    "fill-extrusion-base": 0,
-                    "fill-extrusion-opacity": 0.7
-                  }
-                })
-              }
-            })
-            workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
-          },
-          function(err) {
-            console.log("error:", err)
-          }
-        )
+        resolveSpatialRegression()
 
         // Create a popup, but don't add it to the map yet.
         var popup = new mapboxgl.Popup({
@@ -334,7 +352,9 @@ const MapboxGLMap = () => {
           var coordinates = e.features[0].geometry.coordinates.slice()
           var nitrate_value = e.features[0].properties.nitr_con
           var body =
-            "Nitrate Value: <strong>" + nitrate_value.toFixed(3) + "</strong>"
+            "Nitrate Value: <strong>" +
+            nitrate_value.toFixed(2) +
+            " mg/L</strong>"
 
           // Ensure that if the map is zoomed out such that multiple
           // copies of the feature are visible, the popup appears
@@ -366,6 +386,12 @@ const MapboxGLMap = () => {
           // Populate the popup and set its coordinates
           // based on the feature found.
           const setPopUp = (coordinates, body) => {
+            // Ensure that if the map is zoomed out such that multiple
+            // copies of the feature are visible, the popup appears
+            // over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+            }
             popup
               .setLngLat(coordinates)
               .setHTML(body)
@@ -373,26 +399,26 @@ const MapboxGLMap = () => {
           }
 
           var coordinates = [e.lngLat.lng, e.lngLat.lat]
-          if (features[0].layer.id === "well-nitrate-data") {
-            var data_value = features[0].properties.nitr_con
-            var body =
-              "Nitrate Value: <strong>" +
-              data_value.toFixed(2) +
-              " mg/L</strong>"
-            setPopUp(coordinates, body)
-          } else if (features[0].layer.id === "cancer-tracts-data") {
-            var data_value = features[0].properties.canrate * 100
-            var body =
-              "Cancer Rate: <strong>" + data_value.toFixed(1) + "%</strong>"
-            setPopUp(coordinates, body)
+          if (features[0] !== undefined) {
+            if (features[0].layer.id === "well-nitrate-data") {
+              var data_value = features[0].properties.nitr_con
+              var body =
+                "Nitrate Value: <strong>" +
+                data_value.toFixed(2) +
+                " mg/L</strong>"
+              setPopUp(coordinates, body)
+            } else if (features[0].layer.id === "cancer-tracts-data") {
+              var data_value = features[0].properties.canrate * 100
+              var body =
+                "Cancer Rate: <strong>" + data_value.toFixed(1) + "%</strong>"
+              setPopUp(coordinates, body)
+            }
           }
+        })
 
-          // Ensure that if the map is zoomed out such that multiple
-          // copies of the feature are visible, the popup appears
-          // over the copy being pointed to.
-          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
-          }
+        map.on("mouseleave", "cancer-tracts-data", function() {
+          map.getCanvas().style.cursor = ""
+          popup.remove()
         })
       })
     }
