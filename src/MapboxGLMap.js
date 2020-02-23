@@ -26,8 +26,13 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import shp from "shpjs"
 
-import worker from "workerize-loader!./work" // eslint-disable-line import/no-webpack-loader-syntax
-var workerInstance = worker()
+import tagWorker from "workerize-loader!./tag" // eslint-disable-line import/no-webpack-loader-syntax
+import aggregateWorker from "workerize-loader!./aggregate" // eslint-disable-line import/no-webpack-loader-syntax
+import regressionWorker from "workerize-loader!./regression" // eslint-disable-line import/no-webpack-loader-syntax
+var tagWorkerInstance = tagWorker()
+var aggregateWorkerInstanceA = aggregateWorker()
+var aggregateWorkerInstanceB = aggregateWorker()
+var regressionWorkerInstance = regressionWorker()
 
 const styles = {
   width: "100vw",
@@ -176,7 +181,7 @@ const MapboxGLMap = () => {
           }
         }
 
-        // Function that returns a promise that resolves to a geojson of cancer tracts
+        // Promise function that returns a promise that resolves to a geojson of cancer tracts
         function resolveCancerTracts() {
           return shp(process.env.PUBLIC_URL + "/shp/cancer_tracts.zip").then(
             function(geojsonCancerTracts) {
@@ -223,7 +228,7 @@ const MapboxGLMap = () => {
           )
         }
 
-        // Function that returns a promise that resolves to a geojson of nitrate points
+        // Promise function that returns a promise that resolves to a geojson of nitrate points
         function resolveNitratePoints() {
           return shp(process.env.PUBLIC_URL + "/shp/well_nitrate.zip").then(
             function(geojsonWellNitrate) {
@@ -270,6 +275,56 @@ const MapboxGLMap = () => {
           )
         }
 
+        // Promise function to calculate IDW on nitrate values
+        function nitrateAggregate(geojsonEnriched) {
+          return new Promise((resolve, reject) => {
+            // Prepare spatial regression options based on k State value
+            var optionsN = {
+              gridType: "hex",
+              property: "nitr_con",
+              units: "kilometers",
+              weight: kValue
+            }
+
+            aggregateWorkerInstanceA.addEventListener("message", message => {
+              if (message.data.type === "FeatureCollection") {
+                var hexGridN = message.data
+                resolve(hexGridN)
+              }
+            })
+            aggregateWorkerInstanceA.aggregateStuff(
+              geojsonEnriched,
+              sizeValue,
+              optionsN
+            )
+          })
+        }
+
+        // Promise function to calculate IDW on cancer values
+        function cancerAggregate(geojsonEnriched) {
+          return new Promise((resolve, reject) => {
+            // Prepare spatial regression options based on k State value
+            var optionsC = {
+              gridType: "hex",
+              property: "canrate",
+              units: "kilometers",
+              weight: kValue
+            }
+
+            aggregateWorkerInstanceB.addEventListener("message", message => {
+              if (message.data.type === "FeatureCollection") {
+                var hexGridC = message.data
+                resolve(hexGridC)
+              }
+            })
+            aggregateWorkerInstanceB.aggregateStuff(
+              geojsonEnriched,
+              sizeValue,
+              optionsC
+            )
+          })
+        }
+
         async function resolveSpatialRegression() {
           // Asynchronously request both geojson feature collections
           const [geojsonWellNitrate, geojsonCancerTracts] = await Promise.all([
@@ -277,65 +332,119 @@ const MapboxGLMap = () => {
             resolveCancerTracts()
           ])
 
-          // Prepare spatial regression options based on k State value
-          var options = {
-            gridType: "triangle",
-            property: "nitr_con",
-            units: "miles",
-            weight: kValue
-          }
-
-          var triangleGrid
-
-          workerInstance.addEventListener("message", message => {
+          // Tag nitrate points with cancer tract data (~12 seconds)
+          // Use web worker to do with separate thread behind the scenes
+          tagWorkerInstance.addEventListener("message", message => {
             if (message.data.type === "FeatureCollection") {
-              triangleGrid = message.data
+              var geojsonEnriched = message.data
 
-              if (map.getLayer("spatial-regression-data") !== undefined) {
-                map.removeLayer("spatial-regression-data")
-                map.removeSource("spatial-regression-data")
+              map.removeLayer("well-nitrate-data")
+              map.removeSource("well-nitrate-data")
+
+              map.addSource("well-nitrate-data", {
+                type: "geojson",
+                data: geojsonEnriched
+              })
+
+              map.addLayer(
+                {
+                  id: "well-nitrate-data",
+                  type: "circle",
+                  source: "well-nitrate-data",
+                  paint: {
+                    "circle-radius": 4,
+                    "circle-color": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      "#2166ac",
+                      3.4,
+                      "#67a9cf",
+                      7.8,
+                      "#d1e5f0",
+                      10.5,
+                      "#fddbc7",
+                      12.5,
+                      "#ef8a62",
+                      17,
+                      "#b2182b"
+                    ]
+                  },
+                  filter: ["==", "$type", "Point"]
+                },
+                firstSymbolId
+              )
+
+              // Asynchronously resolve each aggregation prior to regression calc
+              async function resolveAggregateAsync(geojsonEnriched) {
+                const [hexNitrate, hexCancer] = await Promise.all([
+                  nitrateAggregate(geojsonEnriched),
+                  cancerAggregate(geojsonEnriched)
+                ])
+
+                // Initial regression calc
+                regressionWorkerInstance.addEventListener(
+                  "message",
+                  message => {
+                    if (message.data.type === "FeatureCollection") {
+                      var hexGrid = message.data
+
+                      if (
+                        map.getLayer("spatial-regression-data") !== undefined
+                      ) {
+                        map.removeLayer("spatial-regression-data")
+                        map.removeSource("spatial-regression-data")
+                      }
+
+                      map.addSource("spatial-regression-data", {
+                        type: "geojson",
+                        data: hexGrid
+                      })
+
+                      map.addLayer({
+                        id: "spatial-regression-data",
+                        type: "fill-extrusion",
+                        source: "spatial-regression-data",
+                        layout: {
+                          visibility: "none"
+                        },
+                        paint: {
+                          "fill-extrusion-color": [
+                            "interpolate",
+                            ["linear"],
+                            ["get", "st_res"],
+                            -2.5,
+                            "#282728",
+                            0,
+                            "#B42222",
+                            2.5,
+                            "#fff"
+                          ],
+                          "fill-extrusion-height": [
+                            "interpolate",
+                            ["linear"],
+                            ["get", "st_res"],
+                            -2.5,
+                            -10000,
+                            2.5,
+                            250000
+                          ],
+                          "fill-extrusion-base": 0,
+                          "fill-extrusion-opacity": 0.7
+                        }
+                      })
+                    }
+                  }
+                )
+                regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer)
               }
 
-              map.addSource("spatial-regression-data", {
-                type: "geojson",
-                data: triangleGrid
-              })
-
-              map.addLayer({
-                id: "spatial-regression-data",
-                type: "fill-extrusion",
-                source: "spatial-regression-data",
-                layout: {
-                  visibility: "none"
-                },
-                paint: {
-                  "fill-extrusion-color": [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "nitr_con"],
-                    0,
-                    "#282728",
-                    8,
-                    "#B42222",
-                    16,
-                    "#fff"
-                  ],
-                  "fill-extrusion-height": [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "nitr_con"],
-                    0,
-                    -10000,
-                    16,
-                    250000
-                  ],
-                  "fill-extrusion-base": 0,
-                  "fill-extrusion-opacity": 0.7
-                }
-              })
+              resolveAggregateAsync(geojsonEnriched)
             }
           })
-          workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
+          // Issue tagging request
+          tagWorkerInstance.tagStuff(geojsonWellNitrate, geojsonCancerTracts)
         }
 
         resolveSpatialRegression()
@@ -346,6 +455,7 @@ const MapboxGLMap = () => {
           closeOnClick: false
         })
 
+        // Nitrate pop up spec
         map.on("mouseenter", "well-nitrate-data", function(e) {
           // Change the cursor style as a UI indicator.
           map.getCanvas().style.cursor = "pointer"
@@ -371,12 +481,13 @@ const MapboxGLMap = () => {
             .addTo(map)
         })
 
+        // Remove point pop up
         map.on("mouseleave", "well-nitrate-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
         })
 
-        // Add tooltip on mouse move
+        // Add tooltip on mouse move for points and tracts
         // Deconflict between layers within this function
         map.on("mousemove", function(e) {
           // Change the cursor style as a UI indicator.
@@ -416,6 +527,7 @@ const MapboxGLMap = () => {
           }
         })
 
+        // Remove tracts pop up
         map.on("mouseleave", "cancer-tracts-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
@@ -427,71 +539,117 @@ const MapboxGLMap = () => {
   }, [map])
 
   const calcSR = (kValue, sizeValue) => {
-    var geojsonWellNitrate = map.getSource("well-nitrate-data")._data
+    var geojsonEnriched = map.getSource("well-nitrate-data")._data
 
-    // SR Initialization based on k=value
-    var options = {
-      gridType: "triangle",
-      property: "nitr_con",
-      units: "kilometers",
-      weight: kValue
-    }
-
-    workerInstance.terminate()
-    workerInstance = worker()
-    var triangleGrid
-
-    workerInstance.addEventListener("message", message => {
-      if (message.data.type === "FeatureCollection") {
-        triangleGrid = message.data
-
-        if (map.getLayer("spatial-regression-data") !== undefined) {
-          map.removeLayer("spatial-regression-data")
-          map.removeSource("spatial-regression-data")
+    // Promise function to calculate IDW on nitrate values
+    function nitrateAggregate(geojsonEnriched) {
+      return new Promise((resolve, reject) => {
+        // Prepare spatial regression options based on k State value
+        var optionsN = {
+          gridType: "hex",
+          property: "nitr_con",
+          units: "kilometers",
+          weight: kValue
         }
 
-        map.addSource("spatial-regression-data", {
-          type: "geojson",
-          data: triangleGrid
-        })
-
-        map.addLayer({
-          id: "spatial-regression-data",
-          type: "fill-extrusion",
-          source: "spatial-regression-data",
-          layout: {
-            visibility: "visible"
-          },
-          paint: {
-            "fill-extrusion-color": [
-              "interpolate",
-              ["linear"],
-              ["get", "nitr_con"],
-              0,
-              "#282728",
-              8,
-              "#B42222",
-              16,
-              "#fff"
-            ],
-            "fill-extrusion-height": [
-              "interpolate",
-              ["linear"],
-              ["get", "nitr_con"],
-              0,
-              -10000,
-              16,
-              250000
-            ],
-            "fill-extrusion-base": 0,
-            "fill-extrusion-opacity": 0.7
+        aggregateWorkerInstanceA.addEventListener("message", message => {
+          if (message.data.type === "FeatureCollection") {
+            var hexGridN = message.data
+            resolve(hexGridN)
           }
         })
-        setActiveSR(true)
-        setLoading(false)
-      }
-    })
-    workerInstance.calcStuff(geojsonWellNitrate, sizeValue, options)
+        aggregateWorkerInstanceA.regressionStuff(
+          geojsonEnriched,
+          sizeValue,
+          optionsN
+        )
+      })
+    }
+
+    // Promise function to calculate IDW on cancer values
+    function cancerAggregate(geojsonEnriched) {
+      return new Promise((resolve, reject) => {
+        // Prepare spatial regression options based on k State value
+        var optionsC = {
+          gridType: "hex",
+          property: "canrate",
+          units: "kilometers",
+          weight: kValue
+        }
+
+        aggregateWorkerInstanceB.addEventListener("message", message => {
+          if (message.data.type === "FeatureCollection") {
+            var hexGridC = message.data
+            resolve(hexGridC)
+          }
+        })
+        aggregateWorkerInstanceB.regressionStuff(
+          geojsonEnriched,
+          sizeValue,
+          optionsC
+        )
+      })
+    }
+
+    async function resolveAggregateAsync(geojsonEnriched) {
+      const [hexNitrate, hexCancer] = await Promise.all([
+        nitrateAggregate(geojsonEnriched),
+        cancerAggregate(geojsonEnriched)
+      ])
+
+      // Initial regression calc
+      regressionWorkerInstance.addEventListener("message", message => {
+        if (message.data.type === "FeatureCollection") {
+          var hexGrid = message.data
+
+          if (map.getLayer("spatial-regression-data") !== undefined) {
+            map.removeLayer("spatial-regression-data")
+            map.removeSource("spatial-regression-data")
+          }
+
+          map.addSource("spatial-regression-data", {
+            type: "geojson",
+            data: hexGrid
+          })
+
+          map.addLayer({
+            id: "spatial-regression-data",
+            type: "fill-extrusion",
+            source: "spatial-regression-data",
+            layout: {
+              visibility: "none"
+            },
+            paint: {
+              "fill-extrusion-color": [
+                "interpolate",
+                ["linear"],
+                ["get", "st_res"],
+                -2.5,
+                "#282728",
+                0,
+                "#B42222",
+                2.5,
+                "#fff"
+              ],
+              "fill-extrusion-height": [
+                "interpolate",
+                ["linear"],
+                ["get", "st_res"],
+                -2.5,
+                -10000,
+                2.5,
+                250000
+              ],
+              "fill-extrusion-base": 0,
+              "fill-extrusion-opacity": 0.7
+            }
+          })
+        }
+      })
+      regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer)
+    }
+
+    resolveAggregateAsync(geojsonEnriched)
   }
 
   const clickWN = () => {
@@ -549,11 +707,19 @@ const MapboxGLMap = () => {
     }
   }
 
-  const handleBlur = () => {
+  const handleBlurK = () => {
     if (kValue < 0) {
       setKValue(0)
     } else if (kValue > 5) {
       setKValue(5)
+    }
+  }
+
+  const handleBlurSize = () => {
+    if (sizeValue < 5) {
+      setSizeValue(5)
+    } else if (sizeValue > 35) {
+      setSizeValue(35)
     }
   }
 
@@ -638,7 +804,7 @@ const MapboxGLMap = () => {
                       value={kValue}
                       margin="dense"
                       onChange={handleKInputChange}
-                      onBlur={handleBlur}
+                      onBlur={handleBlurK}
                       inputProps={{
                         step: 0.2,
                         min: 1,
@@ -655,7 +821,7 @@ const MapboxGLMap = () => {
                 variant="subtitle2"
                 align="right"
               >
-                Triangle Size (sqkm)
+                Hexagon Size (sqkm)
               </Typography>
               <div className={classes.kslider}>
                 <Grid container spacing={2} alignItems="center">
@@ -678,7 +844,7 @@ const MapboxGLMap = () => {
                       value={sizeValue}
                       margin="dense"
                       onChange={handleSizeInputChange}
-                      onBlur={handleBlur}
+                      onBlur={handleBlurSize}
                       inputProps={{
                         step: 5,
                         min: 5,
