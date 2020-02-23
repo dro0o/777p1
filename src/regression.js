@@ -4,16 +4,9 @@ import intersect from "@turf/intersect"
 import union from "@turf/union"
 
 // Regression things
-export const regressionStuff = (hexNitrate, hexCancer, tracts) => {
+export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
   // Dissolve tracts data for Wisconsin clip
-  console.log(tracts)
-  var wisc = tracts.features[0]
-  for (const [ind, val] of tracts.features.entries()) {
-    if (ind !== 0) {
-      wisc = union(wisc, val)
-      console.log(ind, wisc)
-    }
-  }
+  console.log(wisc)
 
   // Merge the data into hexNitrate prior to regression fit
   var data = []
@@ -62,18 +55,7 @@ export const regressionStuff = (hexNitrate, hexCancer, tracts) => {
     }
   }
 
-  console.log("Regression Output, pre wisc cut: ", hexNitrate)
-
-  geomEach(
-    hexNitrate,
-    (
-      currentGeometry,
-      featureIndex,
-      featureProperties,
-      featureBBox,
-      featureId
-    ) => {}
-  )
+  console.log("Regression Output, post wisc cut: ", hexNitrate)
 
   postMessage(hexNitrate)
 }

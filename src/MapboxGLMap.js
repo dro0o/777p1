@@ -135,6 +135,7 @@ const MapboxGLMap = () => {
   const [kValue, setKValue] = React.useState(2)
   const [sizeValue, setSizeValue] = React.useState(10)
   const [loading, setLoading] = React.useState(false)
+  const [wisc, setWisc] = React.useState(false)
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
@@ -166,6 +167,14 @@ const MapboxGLMap = () => {
         }),
         "top-left"
       )
+
+      fetch(process.env.PUBLIC_URL + "./geojson/wisconsin.geojson")
+        .then(response => {
+          return response.json()
+        })
+        .then(data => console.log(data))
+        .catch(err => console.log("Error reading Wisconsin geojson: ", err))
+        .then(console.log(wisc))
 
       map.on("load", () => {
         setMap(map)
@@ -377,10 +386,7 @@ const MapboxGLMap = () => {
               )
 
               // Asynchronously resolve each aggregation prior to regression calc
-              async function resolveAggregateAsync(
-                geojsonEnriched,
-                geojsonCancerTracts
-              ) {
+              async function resolveAggregateAsync(geojsonEnriched) {
                 const [hexNitrate, hexCancer] = await Promise.all([
                   nitrateAggregate(geojsonEnriched),
                   cancerAggregate(geojsonEnriched)
@@ -443,11 +449,11 @@ const MapboxGLMap = () => {
                 regressionWorkerInstance.regressionStuff(
                   hexNitrate,
                   hexCancer,
-                  geojsonCancerTracts
+                  wisc
                 )
               }
 
-              resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts)
+              resolveAggregateAsync(geojsonEnriched)
             }
           })
           // Issue tagging request
@@ -600,7 +606,7 @@ const MapboxGLMap = () => {
       })
     }
 
-    async function resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts) {
+    async function resolveAggregateAsync(geojsonEnriched) {
       const [hexNitrate, hexCancer] = await Promise.all([
         nitrateAggregate(geojsonEnriched),
         cancerAggregate(geojsonEnriched)
@@ -655,14 +661,10 @@ const MapboxGLMap = () => {
           })
         }
       })
-      regressionWorkerInstance.regressionStuff(
-        hexNitrate,
-        hexCancer,
-        geojsonCancerTracts
-      )
+      regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer, wisc)
     }
 
-    resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts)
+    resolveAggregateAsync(geojsonEnriched)
   }
 
   const clickWN = () => {
