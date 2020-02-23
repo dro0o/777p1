@@ -377,7 +377,10 @@ const MapboxGLMap = () => {
               )
 
               // Asynchronously resolve each aggregation prior to regression calc
-              async function resolveAggregateAsync(geojsonEnriched) {
+              async function resolveAggregateAsync(
+                geojsonEnriched,
+                geojsonCancerTracts
+              ) {
                 const [hexNitrate, hexCancer] = await Promise.all([
                   nitrateAggregate(geojsonEnriched),
                   cancerAggregate(geojsonEnriched)
@@ -437,10 +440,14 @@ const MapboxGLMap = () => {
                     }
                   }
                 )
-                regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer)
+                regressionWorkerInstance.regressionStuff(
+                  hexNitrate,
+                  hexCancer,
+                  geojsonCancerTracts
+                )
               }
 
-              resolveAggregateAsync(geojsonEnriched)
+              resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts)
             }
           })
           // Issue tagging request
@@ -491,7 +498,6 @@ const MapboxGLMap = () => {
         // Deconflict between layers within this function
         map.on("mousemove", function(e) {
           // Change the cursor style as a UI indicator.
-          map.getCanvas().style.cursor = "pointer"
           var features = map.queryRenderedFeatures(e.point)
 
           // Populate the popup and set its coordinates
@@ -512,6 +518,7 @@ const MapboxGLMap = () => {
           var coordinates = [e.lngLat.lng, e.lngLat.lat]
           if (features[0] !== undefined) {
             if (features[0].layer.id === "well-nitrate-data") {
+              map.getCanvas().style.cursor = "pointer"
               var data_value = features[0].properties.nitr_con
               var body =
                 "Nitrate Value: <strong>" +
@@ -519,6 +526,7 @@ const MapboxGLMap = () => {
                 " mg/L</strong>"
               setPopUp(coordinates, body)
             } else if (features[0].layer.id === "cancer-tracts-data") {
+              map.getCanvas().style.cursor = "pointer"
               var data_value = features[0].properties.canrate * 100
               var body =
                 "Cancer Rate: <strong>" + data_value.toFixed(1) + "%</strong>"
@@ -540,6 +548,7 @@ const MapboxGLMap = () => {
 
   const calcSR = (kValue, sizeValue) => {
     var geojsonEnriched = map.getSource("well-nitrate-data")._data
+    var geojsonCancerTracts = map.getSource("cancer-tracts-data")._data
 
     // Promise function to calculate IDW on nitrate values
     function nitrateAggregate(geojsonEnriched) {
@@ -591,7 +600,7 @@ const MapboxGLMap = () => {
       })
     }
 
-    async function resolveAggregateAsync(geojsonEnriched) {
+    async function resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts) {
       const [hexNitrate, hexCancer] = await Promise.all([
         nitrateAggregate(geojsonEnriched),
         cancerAggregate(geojsonEnriched)
@@ -646,10 +655,14 @@ const MapboxGLMap = () => {
           })
         }
       })
-      regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer)
+      regressionWorkerInstance.regressionStuff(
+        hexNitrate,
+        hexCancer,
+        geojsonCancerTracts
+      )
     }
 
-    resolveAggregateAsync(geojsonEnriched)
+    resolveAggregateAsync(geojsonEnriched, geojsonCancerTracts)
   }
 
   const clickWN = () => {
@@ -765,7 +778,7 @@ const MapboxGLMap = () => {
                   startIcon={<HomeWorkIcon style={{ fill: "#542788" }} />}
                   endIcon={<HomeWorkIcon style={{ fill: "#f03b20" }} />}
                 >
-                  Census Tract Data
+                  Census Cancer Data
                 </StyledButton>
                 <StyledButton
                   color={activeSR ? "primary" : "secondary"}
