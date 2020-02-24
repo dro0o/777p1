@@ -168,13 +168,19 @@ const MapboxGLMap = () => {
         "top-left"
       )
 
-      fetch(process.env.PUBLIC_URL + "./geojson/wisconsin.geojson")
-        .then(response => {
-          return response.json()
-        })
-        .then(data => console.log(data))
-        .catch(err => console.log("Error reading Wisconsin geojson: ", err))
-        .then(console.log(wisc))
+      // Rip geojson of just wisconsin
+      // For use in pairing down hexes from regression
+      function resolveWisc() {
+        return fetch(process.env.PUBLIC_URL + "./geojson/wisconsin.geojson")
+          .then(response => {
+            return response.json()
+          })
+          .catch(err => console.log("Error reading Wisconsin geojson: ", err))
+          .then(data => {
+            setWisc(data)
+            return data
+          })
+      }
 
       map.on("load", () => {
         setMap(map)
@@ -387,9 +393,10 @@ const MapboxGLMap = () => {
 
               // Asynchronously resolve each aggregation prior to regression calc
               async function resolveAggregateAsync(geojsonEnriched) {
-                const [hexNitrate, hexCancer] = await Promise.all([
+                const [hexNitrate, hexCancer, wiscData] = await Promise.all([
                   nitrateAggregate(geojsonEnriched),
-                  cancerAggregate(geojsonEnriched)
+                  cancerAggregate(geojsonEnriched),
+                  resolveWisc()
                 ])
 
                 // Initial regression calc
@@ -422,7 +429,7 @@ const MapboxGLMap = () => {
                           "fill-extrusion-color": [
                             "interpolate",
                             ["linear"],
-                            ["get", "st_res"],
+                            ["get", "std_res"],
                             -2.5,
                             "#282728",
                             0,
@@ -433,11 +440,11 @@ const MapboxGLMap = () => {
                           "fill-extrusion-height": [
                             "interpolate",
                             ["linear"],
-                            ["get", "st_res"],
-                            -2.5,
-                            -10000,
-                            2.5,
-                            250000
+                            ["get", "std_res"],
+                            -10,
+                            0,
+                            10,
+                            100000
                           ],
                           "fill-extrusion-base": 0,
                           "fill-extrusion-opacity": 0.7
@@ -449,7 +456,7 @@ const MapboxGLMap = () => {
                 regressionWorkerInstance.regressionStuff(
                   hexNitrate,
                   hexCancer,
-                  wisc
+                  wiscData
                 )
               }
 
@@ -567,13 +574,16 @@ const MapboxGLMap = () => {
           weight: kValue
         }
 
+        aggregateWorkerInstanceA.terminate()
+        aggregateWorkerInstanceA = aggregateWorker()
+
         aggregateWorkerInstanceA.addEventListener("message", message => {
           if (message.data.type === "FeatureCollection") {
             var hexGridN = message.data
             resolve(hexGridN)
           }
         })
-        aggregateWorkerInstanceA.regressionStuff(
+        aggregateWorkerInstanceA.aggregateStuff(
           geojsonEnriched,
           sizeValue,
           optionsN
@@ -592,13 +602,16 @@ const MapboxGLMap = () => {
           weight: kValue
         }
 
+        aggregateWorkerInstanceB.terminate()
+        aggregateWorkerInstanceB = aggregateWorker()
+
         aggregateWorkerInstanceB.addEventListener("message", message => {
           if (message.data.type === "FeatureCollection") {
             var hexGridC = message.data
             resolve(hexGridC)
           }
         })
-        aggregateWorkerInstanceB.regressionStuff(
+        aggregateWorkerInstanceB.aggregateStuff(
           geojsonEnriched,
           sizeValue,
           optionsC
@@ -611,6 +624,10 @@ const MapboxGLMap = () => {
         nitrateAggregate(geojsonEnriched),
         cancerAggregate(geojsonEnriched)
       ])
+      console.log("wisc in calcSR: ", wisc)
+
+      regressionWorkerInstance.terminate()
+      regressionWorkerInstance = regressionWorker()
 
       // Initial regression calc
       regressionWorkerInstance.addEventListener("message", message => {
