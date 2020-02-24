@@ -10,12 +10,13 @@ import {
   Input,
   LinearProgress
 } from "@material-ui/core"
-import FitnessCenterIcon from "@material-ui/icons/FitnessCenter"
 import LocalDrinkIcon from "@material-ui/icons/LocalDrink"
 import HomeWorkIcon from "@material-ui/icons/HomeWork"
 import BlurCircularIcon from "@material-ui/icons/BlurCircular"
 import MultilineChartIcon from "@material-ui/icons/MultilineChart"
-import ChangeHistoryIcon from "@material-ui/icons/ChangeHistory"
+import Icon from "@mdi/react"
+import { mdiWeight } from "@mdi/js"
+import { mdiHexagonMultiple } from "@mdi/js"
 import {
   makeStyles,
   withStyles,
@@ -682,6 +683,7 @@ const MapboxGLMap = () => {
               }
             }
           })
+          setActiveSR(true)
           setLoading(false)
         }
       })
@@ -809,8 +811,8 @@ const MapboxGLMap = () => {
                 <StyledButton
                   color={activeSR ? "primary" : "secondary"}
                   onClick={clickSR}
-                  startIcon={<BlurCircularIcon />}
-                  endIcon={<MultilineChartIcon />}
+                  startIcon={<BlurCircularIcon style={{ fill: "#1b7837" }} />}
+                  endIcon={<MultilineChartIcon style={{ fill: "#ffeda0" }} />}
                   disabled={disableSR}
                 >
                   Spatial Regression
@@ -826,7 +828,15 @@ const MapboxGLMap = () => {
               <div className={classes.kslider}>
                 <Grid container spacing={2} alignItems="center">
                   <Grid item>
-                    <FitnessCenterIcon />
+                    <Icon
+                      path={mdiWeight}
+                      title=""
+                      size={1}
+                      horizontal
+                      vertical
+                      rotate={180}
+                      color="#636363"
+                    />
                   </Grid>
                   <Grid item xs>
                     <Slider
@@ -868,7 +878,15 @@ const MapboxGLMap = () => {
               <div className={classes.kslider}>
                 <Grid container spacing={2} alignItems="center">
                   <Grid item>
-                    <ChangeHistoryIcon />
+                    <Icon
+                      path={mdiHexagonMultiple}
+                      title=""
+                      size={1}
+                      horizontal
+                      vertical
+                      rotate={180}
+                      color="#636363"
+                    />
                   </Grid>
                   <Grid item xs>
                     <Slider
