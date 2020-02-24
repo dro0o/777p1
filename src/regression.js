@@ -1,7 +1,6 @@
 import regression from "regression"
 import { standardDeviation } from "simple-statistics"
 import intersect from "@turf/intersect"
-import union from "@turf/union"
 
 // Regression things
 export const regressionStuff = (hexNitrate, hexCancer, wisc) => {

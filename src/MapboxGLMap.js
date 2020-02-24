@@ -136,6 +136,7 @@ const MapboxGLMap = () => {
   const [sizeValue, setSizeValue] = React.useState(10)
   const [loading, setLoading] = React.useState(false)
   const [wisc, setWisc] = React.useState(false)
+  const [disableSR, setDisableSR] = React.useState(true)
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
@@ -430,26 +431,30 @@ const MapboxGLMap = () => {
                             "interpolate",
                             ["linear"],
                             ["get", "std_res"],
-                            -2.5,
-                            "#282728",
+                            -3,
+                            "#252525",
                             0,
-                            "#B42222",
-                            2.5,
-                            "#fff"
+                            "#1b7837",
+                            3,
+                            "#ffeda0"
                           ],
                           "fill-extrusion-height": [
                             "interpolate",
                             ["linear"],
                             ["get", "std_res"],
-                            -10,
-                            0,
-                            10,
-                            100000
+                            -9,
+                            -100,
+                            9,
+                            150000
                           ],
                           "fill-extrusion-base": 0,
-                          "fill-extrusion-opacity": 0.7
+                          "fill-extrusion-opacity": 0.6,
+                          "fill-extrusion-opacity-transition": {
+                            duration: 2000
+                          }
                         }
                       })
+                      setDisableSR(false)
                     }
                   }
                 )
@@ -542,7 +547,7 @@ const MapboxGLMap = () => {
               map.getCanvas().style.cursor = "pointer"
               var data_value = features[0].properties.canrate * 100
               var body =
-                "Cancer Rate: <strong>" + data_value.toFixed(1) + "%</strong>"
+                "Cancer Rate: <strong>" + data_value.toFixed(0) + "%</strong>"
               setPopUp(coordinates, body)
             }
           }
@@ -561,7 +566,6 @@ const MapboxGLMap = () => {
 
   const calcSR = (kValue, sizeValue) => {
     var geojsonEnriched = map.getSource("well-nitrate-data")._data
-    var geojsonCancerTracts = map.getSource("cancer-tracts-data")._data
 
     // Promise function to calculate IDW on nitrate values
     function nitrateAggregate(geojsonEnriched) {
@@ -624,7 +628,6 @@ const MapboxGLMap = () => {
         nitrateAggregate(geojsonEnriched),
         cancerAggregate(geojsonEnriched)
       ])
-      console.log("wisc in calcSR: ", wisc)
 
       regressionWorkerInstance.terminate()
       regressionWorkerInstance = regressionWorker()
@@ -649,34 +652,38 @@ const MapboxGLMap = () => {
             type: "fill-extrusion",
             source: "spatial-regression-data",
             layout: {
-              visibility: "none"
+              visibility: "visible"
             },
             paint: {
               "fill-extrusion-color": [
                 "interpolate",
                 ["linear"],
-                ["get", "st_res"],
-                -2.5,
-                "#282728",
+                ["get", "std_res"],
+                -3,
+                "#252525",
                 0,
-                "#B42222",
-                2.5,
-                "#fff"
+                "#1b7837",
+                3,
+                "#ffeda0"
               ],
               "fill-extrusion-height": [
                 "interpolate",
                 ["linear"],
-                ["get", "st_res"],
-                -2.5,
-                -10000,
-                2.5,
-                250000
+                ["get", "std_res"],
+                -9,
+                0,
+                9,
+                150000
               ],
               "fill-extrusion-base": 0,
-              "fill-extrusion-opacity": 0.7
+              "fill-extrusion-opacity": 0.6,
+              "fill-extrusion-opacity-transition": {
+                duration: 2000
+              }
             }
           })
         }
+        setLoading(false)
       })
       regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer, wisc)
     }
@@ -804,6 +811,7 @@ const MapboxGLMap = () => {
                   onClick={clickSR}
                   startIcon={<BlurCircularIcon />}
                   endIcon={<MultilineChartIcon />}
+                  disabled={disableSR}
                 >
                   Spatial Regression
                 </StyledButton>
@@ -825,6 +833,7 @@ const MapboxGLMap = () => {
                       value={typeof kValue === "number" ? kValue : 0}
                       onChange={handleKSliderChange}
                       aria-labelledby="input-slider"
+                      disabled={disableSR}
                       step={0.2}
                       min={1}
                       max={5}
@@ -837,6 +846,7 @@ const MapboxGLMap = () => {
                       margin="dense"
                       onChange={handleKInputChange}
                       onBlur={handleBlurK}
+                      disabled={disableSR}
                       inputProps={{
                         step: 0.2,
                         min: 1,
@@ -865,9 +875,10 @@ const MapboxGLMap = () => {
                       value={typeof sizeValue === "number" ? sizeValue : 0}
                       onChange={handleSizeSliderChange}
                       aria-labelledby="input-s-slider"
-                      step={5}
-                      min={5}
-                      max={35}
+                      disabled={disableSR}
+                      step={3}
+                      min={3}
+                      max={21}
                     />
                   </Grid>
                   <Grid item style={{ paddingRight: 0 }}>
@@ -877,10 +888,11 @@ const MapboxGLMap = () => {
                       margin="dense"
                       onChange={handleSizeInputChange}
                       onBlur={handleBlurSize}
+                      disabled={disableSR}
                       inputProps={{
-                        step: 5,
-                        min: 5,
-                        max: 35,
+                        step: 3,
+                        min: 3,
+                        max: 21,
                         type: "number",
                         "aria-labelledby": "input-s-slider"
                       }}
