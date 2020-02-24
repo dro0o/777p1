@@ -682,8 +682,8 @@ const MapboxGLMap = () => {
               }
             }
           })
+          setLoading(false)
         }
-        setLoading(false)
       })
       regressionWorkerInstance.regressionStuff(hexNitrate, hexCancer, wisc)
     }
