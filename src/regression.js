@@ -19,15 +19,16 @@ export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
 
   // Populate predicted cancer values array for
   // standard deviation calculation
-  var predicted = []
+  var residuals = []
   for (const [ind, val] of hexNitrate.features.entries()) {
     var pred = output.predict(val.properties.nitr_con)
-    predicted.push(pred[1])
+    residuals.push(val.properties.canrate - pred[1])
     hexNitrate.features[ind].properties.pred_canrate = pred[1]
+    hexNitrate.features[ind].properties.res = val.properties.canrate - pred[1]
   }
 
   // Calulcate standard deviation
-  const std_dev = standardDeviation(predicted)
+  const std_dev = standardDeviation(residuals)
 
   // Use regression fit and standard deviation
   // to enrich the hexNitrate geoJson
@@ -38,9 +39,8 @@ export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
 
     // Store residuals, standard residuals,
     // and standard deviation in data
-    var res = val.properties.canrate - val.properties.pred_canrate
-    hexNitrate.features[ind].properties.res = res
-    hexNitrate.features[ind].properties.std_res = res / std_dev
+    hexNitrate.features[ind].properties.std_res =
+      hexNitrate.features[ind].properties.res / std_dev
     hexNitrate.features[ind].properties.std_dev = std_dev
 
     // Mask for only Wisconsin intersecting geoms

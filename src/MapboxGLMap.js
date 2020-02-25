@@ -260,22 +260,30 @@ const MapboxGLMap = () => {
                   type: "circle",
                   source: "well-nitrate-data",
                   paint: {
-                    "circle-radius": 4,
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      3,
+                      5.5,
+                      5,
+                      11,
+                      7,
+                      16.5,
+                      9
+                    ],
                     "circle-color": [
                       "interpolate",
                       ["linear"],
                       ["get", "nitr_con"],
                       0,
                       "#2166ac",
-                      3.4,
+                      5.5,
                       "#67a9cf",
-                      7.8,
-                      "#d1e5f0",
-                      10.5,
-                      "#fddbc7",
-                      12.5,
+                      11,
                       "#ef8a62",
-                      17,
+                      16.5,
                       "#b2182b"
                     ]
                   },
@@ -369,22 +377,30 @@ const MapboxGLMap = () => {
                   type: "circle",
                   source: "well-nitrate-data",
                   paint: {
-                    "circle-radius": 4,
+                    "circle-radius": [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "nitr_con"],
+                      0,
+                      3,
+                      5.5,
+                      5,
+                      11,
+                      7,
+                      16.5,
+                      9
+                    ],
                     "circle-color": [
                       "interpolate",
                       ["linear"],
                       ["get", "nitr_con"],
                       0,
                       "#2166ac",
-                      3.4,
+                      5.5,
                       "#67a9cf",
-                      7.8,
-                      "#d1e5f0",
-                      10.5,
-                      "#fddbc7",
-                      12.5,
+                      11,
                       "#ef8a62",
-                      17,
+                      16.5,
                       "#b2182b"
                     ]
                   },
@@ -443,9 +459,9 @@ const MapboxGLMap = () => {
                             "interpolate",
                             ["linear"],
                             ["get", "std_res"],
-                            -9,
+                            -3,
                             -100,
-                            9,
+                            3,
                             150000
                           ],
                           "fill-extrusion-base": 0,
@@ -518,6 +534,7 @@ const MapboxGLMap = () => {
         map.on("mousemove", function(e) {
           // Change the cursor style as a UI indicator.
           var features = map.queryRenderedFeatures(e.point)
+          console.log(features)
 
           // Populate the popup and set its coordinates
           // based on the feature found.
@@ -550,12 +567,42 @@ const MapboxGLMap = () => {
               var body =
                 "Cancer Rate: <strong>" + data_value.toFixed(0) + "%</strong>"
               setPopUp(coordinates, body)
+            } else if (features[0].layer.id === "spatial-regression-data") {
+              var std_res_value = features[0].properties.std_res
+              if (std_res_value !== -99) {
+                map.getCanvas().style.cursor = "pointer"
+                var cancer_value = features[0].properties.canrate * 100
+                var pred_cancer_value =
+                  features[0].properties.pred_canrate * 100
+                var body1 =
+                  "Actual Cancer Rate: <strong>" +
+                  cancer_value.toFixed(0) +
+                  "%</strong>"
+                var body2 =
+                  "<br />Predicted Cancer Rate: <strong>" +
+                  pred_cancer_value.toFixed(0) +
+                  "%</strong>"
+                var body3 =
+                  "<br />Standardized Residual: <strong>" +
+                  std_res_value.toFixed(2) +
+                  "</strong>"
+                setPopUp(coordinates, body1.concat(body2, body3))
+              } else {
+                map.getCanvas().style.cursor = ""
+                popup.remove()
+              }
             }
           }
         })
 
         // Remove tracts pop up
         map.on("mouseleave", "cancer-tracts-data", function() {
+          map.getCanvas().style.cursor = ""
+          popup.remove()
+        })
+
+        // Remove regression pop up
+        map.on("mouseleave", "spatial-regression-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
         })
@@ -671,9 +718,9 @@ const MapboxGLMap = () => {
                 "interpolate",
                 ["linear"],
                 ["get", "std_res"],
-                -9,
+                -3,
                 0,
-                9,
+                3,
                 150000
               ],
               "fill-extrusion-base": 0,
