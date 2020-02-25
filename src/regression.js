@@ -15,7 +15,7 @@ export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
   }
 
   // Execute regression fit
-  const output = regression.linear(data)
+  const output = regression.linear(data, { order: 2, precision: 4 })
 
   // Populate predicted cancer values array for
   // standard deviation calculation
