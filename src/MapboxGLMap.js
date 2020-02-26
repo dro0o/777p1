@@ -150,7 +150,7 @@ const MapboxGLMap = () => {
   const [map, setMap] = useState(null)
   const [lat, setLat] = useState(44.95)
   const [lng, setLng] = useState(-90)
-  const [zoom, setZoom] = useState(6.5)
+  const [zoom, setZoom] = useState(6)
   const mapContainer = useRef(null)
   const [activeWN, setActiveWN] = useState(true)
   const [activeCT, setActiveCT] = useState(true)
@@ -166,8 +166,8 @@ const MapboxGLMap = () => {
     mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
     const initializeMap = ({ setMap, mapContainer }) => {
       var bounds = [
-        [-96, 40], // Southwest coordinates
-        [-84, 49] // Northeast coordinates
+        [-108, 28], // Southwest coordinates
+        [-72, 58] // Northeast coordinates
       ]
 
       const map = new mapboxgl.Map({
