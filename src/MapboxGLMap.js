@@ -47,7 +47,7 @@ const useStyles = makeStyles(uwTheme2 => ({
     "& > *": {
       margin: uwTheme2.spacing(1)
     },
-    top: 76,
+    top: 74,
     right: 10,
     padding: 0,
     backgroundColor: "#ffffff95",
@@ -69,6 +69,9 @@ const useStyles = makeStyles(uwTheme2 => ({
   layerButtons: {},
   kslider: {
     width: 180
+  },
+  legends: {
+    // width: "100vw"
   },
   input: {
     width: 40
@@ -107,18 +110,37 @@ const uwTheme2 = createMuiTheme({
 const options = [
   {
     name: "Spatial Regression",
-    description: "R^2 Value for each polygon",
-    property: "pop_est",
+    description: "Standard residual for each hexagon",
     stops: [
-      [0, "#f8d5cc"],
-      [1000000, "#f4bfb6"],
-      [5000000, "#f1a8a5"],
-      [10000000, "#ee8f9a"],
-      [50000000, "#ec739b"],
-      [100000000, "#dd5ca8"],
-      [250000000, "#c44cc0"],
-      [500000000, "#9f43d7"],
-      [1000000000, "#6e40e6"]
+      [-3, "#ffff00", 12, 108, "round-full"],
+      [-2, "#ffff66", 12, 72, "round-full"],
+      [-1, "#5fa941", 12, 36, "round-full"],
+      [0, "#038145", 12, 12, "round-full"],
+      [1, "#29a869", 12, 36, "round-full"],
+      [2, "#009999", 12, 72, "round-full"],
+      [3, "#006666", 12, 108, "round-full"]
+    ]
+  },
+  {
+    name: "Well Nitrate Data",
+    description: "Test data derived from Wisconsin wells (mg/L)",
+    stops: [
+      [0, "#2166ac", 12, 12, "round-full"],
+      [6, "#67a9cf", 18, 18, "round-full"],
+      [12, "#ef8a62", 24, 24, "round-full"],
+      [18, "#b2182b", 36, 36, "round-full"]
+    ]
+  },
+  {
+    name: "Census Cancer Data",
+    description: "Cancer occurences divided by tract population (%)",
+    stops: [
+      [0, "#542788", 12, 12, ""],
+      [0.1, "#998ec3", 12, 12, ""],
+      [0.2, "#d8daeb", 12, 12, ""],
+      [0.3, "#fecc5c", 12, 12, ""],
+      [0.5, "#fd8d3c", 12, 12, ""],
+      [0.8, "#f03b20", 12, 12, ""]
     ]
   }
 ]
@@ -138,13 +160,14 @@ const MapboxGLMap = () => {
   const [loading, setLoading] = React.useState(false)
   const [wisc, setWisc] = React.useState(false)
   const [disableSR, setDisableSR] = React.useState(true)
+  // const [legendID, setLegendID] = React.useState([0, 1])
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
     const initializeMap = ({ setMap, mapContainer }) => {
       var bounds = [
-        [-95, 41], // Southwest coordinates
-        [-85, 48] // Northeast coordinates
+        [-96, 40], // Southwest coordinates
+        [-84, 49] // Northeast coordinates
       ]
 
       const map = new mapboxgl.Map({
@@ -152,7 +175,7 @@ const MapboxGLMap = () => {
         style: "mapbox://styles/mapbox/dark-v10", // stylesheet location
         center: [lng, lat],
         zoom: zoom,
-        minZoom: 6.5,
+        minZoom: 5,
         maxBounds: bounds
       })
 
@@ -451,9 +474,9 @@ const MapboxGLMap = () => {
                             -10,
                             "#252525",
                             -3,
-                            "#ffed39",
+                            "#ffff00",
                             -2,
-                            "#b3cb3b",
+                            "#ffff66",
                             -1,
                             "#5fa941",
                             0,
@@ -461,9 +484,9 @@ const MapboxGLMap = () => {
                             1,
                             "#29a869",
                             2,
-                            "#229678",
+                            "#009999",
                             3,
-                            "#157576"
+                            "#006666"
                           ],
                           "fill-extrusion-height": [
                             "interpolate",
@@ -473,11 +496,11 @@ const MapboxGLMap = () => {
                             -100,
                             0,
                             0,
-                            10,
-                            250000
+                            3,
+                            200000
                           ],
                           "fill-extrusion-base": 0,
-                          "fill-extrusion-opacity": 0.6,
+                          "fill-extrusion-opacity": 0.7,
                           "fill-extrusion-opacity-transition": {
                             duration: 2000
                           }
@@ -575,24 +598,23 @@ const MapboxGLMap = () => {
               setPopUp(coordinates, body)
             } else if (features[0].layer.id === "cancer-tracts-data") {
               map.getCanvas().style.cursor = "pointer"
-              var data_value = features[0].properties.canrate * 100
+              var data_value = features[0].properties.canrate
               var body =
-                "Cancer Rate: <strong>" + data_value.toFixed(0) + "%</strong>"
+                "Cancer Rate: <strong>" + data_value.toFixed(2) + "%</strong>"
               setPopUp(coordinates, body)
             } else if (features[0].layer.id === "spatial-regression-data") {
               var std_res_value = features[0].properties.std_res
               if (std_res_value !== -99) {
                 map.getCanvas().style.cursor = "pointer"
-                var cancer_value = features[0].properties.canrate * 100
-                var pred_cancer_value =
-                  features[0].properties.pred_canrate * 100
+                var cancer_value = features[0].properties.canrate
+                var pred_cancer_value = features[0].properties.pred_canrate
                 var body1 =
                   "Actual Cancer Rate: <strong>" +
-                  cancer_value.toFixed(0) +
+                  cancer_value.toFixed(2) +
                   "%</strong>"
                 var body2 =
                   "<br />Predicted Cancer Rate: <strong>" +
-                  pred_cancer_value.toFixed(0) +
+                  pred_cancer_value.toFixed(2) +
                   "%</strong>"
                 var body3 =
                   "<br />Standardized Residual: <strong>" +
@@ -722,9 +744,9 @@ const MapboxGLMap = () => {
                 -10,
                 "#252525",
                 -3,
-                "#ffed39",
+                "#ffff00",
                 -2,
-                "#b3cb3b",
+                "#ffff66",
                 -1,
                 "#5fa941",
                 0,
@@ -732,9 +754,9 @@ const MapboxGLMap = () => {
                 1,
                 "#29a869",
                 2,
-                "#229678",
+                "#00ffff",
                 3,
-                "#157576"
+                "#0099cc"
               ],
               "fill-extrusion-height": [
                 "interpolate",
@@ -744,11 +766,11 @@ const MapboxGLMap = () => {
                 -100,
                 0,
                 0,
-                10,
-                160000
+                3,
+                200000
               ],
               "fill-extrusion-base": 0,
-              "fill-extrusion-opacity": 0.6,
+              "fill-extrusion-opacity": 0.7,
               "fill-extrusion-opacity-transition": {
                 duration: 2000
               }
@@ -844,6 +866,98 @@ const MapboxGLMap = () => {
       setSizeValue(3)
     } else if (sizeValue > 21) {
       setSizeValue(21)
+    }
+  }
+
+  const renderLegendKeys = (stop, i) => {
+    var classes = "mr6 inline-block align-middle"
+    if (stop[4] == "round-full") {
+      classes = classes.concat(" round-full")
+    }
+    console.log(classes)
+    return (
+      <div key={i} className="txt-s">
+        <span
+          className={classes}
+          style={{ backgroundColor: stop[1], width: stop[3], height: stop[2] }}
+        />
+        <span>{`${stop[0].toLocaleString()}`}</span>
+      </div>
+    )
+  }
+
+  function SpecificLegend(props) {
+    const id = props.id
+    const mr = props.mr
+    const mb = 28
+    return (
+      <div
+        className="absolute bottom right py12 px12 shadow-darken10 round z1 wmax180"
+        style={{
+          marginRight: mr,
+          marginBottom: mb,
+          backgroundColor: "#ffffff95"
+        }}
+      >
+        <div className="mb6">
+          <h2 className="txt-bold txt-m block">{options[id].name}</h2>
+          <p className="txt-s color-black">{options[id].description}</p>
+        </div>
+        {options[id].stops.map(renderLegendKeys)}
+      </div>
+    )
+  }
+
+  function Legends() {
+    if (activeSR && !activeWN && !activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={0} mr={9} />
+        </div>
+      )
+    } else if (!activeSR && activeWN && !activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={1} mr={9} />
+        </div>
+      )
+    } else if (!activeSR && !activeWN && activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={2} mr={9} />
+        </div>
+      )
+    } else if (activeSR && activeWN && !activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={0} mr={9} />
+          <SpecificLegend id={1} mr={198} />
+        </div>
+      )
+    } else if (!activeSR && activeWN && activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={1} mr={198} />
+          <SpecificLegend id={2} mr={9} />
+        </div>
+      )
+    } else if (activeSR && !activeWN && activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={0} mr={9} />
+          <SpecificLegend id={2} mr={198} />
+        </div>
+      )
+    } else if (activeSR && activeWN && activeCT) {
+      return (
+        <div>
+          <SpecificLegend id={0} mr={9} />
+          <SpecificLegend id={1} mr={388} />
+          <SpecificLegend id={2} mr={198} />
+        </div>
+      )
+    } else if (!activeSR && !activeWN && !activeCT) {
+      return null
     }
   }
 
@@ -1003,6 +1117,7 @@ const MapboxGLMap = () => {
               </div>
             </CardContent>
           </Card>
+          <Legends />
           <div className={classes.loading}>{loading && <LinearProgress />}</div>
         </ThemeProvider>
       </div>
