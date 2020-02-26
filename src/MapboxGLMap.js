@@ -448,21 +448,33 @@ const MapboxGLMap = () => {
                             "interpolate",
                             ["linear"],
                             ["get", "std_res"],
-                            -3,
+                            -10,
                             "#252525",
+                            -3,
+                            "#ffed39",
+                            -2,
+                            "#b3cb3b",
+                            -1,
+                            "#5fa941",
                             0,
-                            "#1b7837",
+                            "#038145",
+                            1,
+                            "#29a869",
+                            2,
+                            "#229678",
                             3,
-                            "#ffeda0"
+                            "#157576"
                           ],
                           "fill-extrusion-height": [
                             "interpolate",
                             ["linear"],
-                            ["get", "std_res"],
-                            -3,
+                            ["get", "abs_val_std_res"],
+                            -10,
                             -100,
-                            3,
-                            150000
+                            0,
+                            0,
+                            10,
+                            250000
                           ],
                           "fill-extrusion-base": 0,
                           "fill-extrusion-opacity": 0.6,
@@ -534,7 +546,7 @@ const MapboxGLMap = () => {
         map.on("mousemove", function(e) {
           // Change the cursor style as a UI indicator.
           var features = map.queryRenderedFeatures(e.point)
-          console.log(features)
+          // console.log(features)
 
           // Populate the popup and set its coordinates
           // based on the feature found.
@@ -707,21 +719,33 @@ const MapboxGLMap = () => {
                 "interpolate",
                 ["linear"],
                 ["get", "std_res"],
-                -3,
+                -10,
                 "#252525",
+                -3,
+                "#ffed39",
+                -2,
+                "#b3cb3b",
+                -1,
+                "#5fa941",
                 0,
-                "#1b7837",
+                "#038145",
+                1,
+                "#29a869",
+                2,
+                "#229678",
                 3,
-                "#ffeda0"
+                "#157576"
               ],
               "fill-extrusion-height": [
                 "interpolate",
                 ["linear"],
-                ["get", "std_res"],
-                -3,
+                ["get", "abs_val_std_res"],
+                -10,
+                -100,
                 0,
-                3,
-                150000
+                0,
+                10,
+                160000
               ],
               "fill-extrusion-base": 0,
               "fill-extrusion-opacity": 0.6,
@@ -775,9 +799,15 @@ const MapboxGLMap = () => {
 
   const handleKInputChange = event => {
     setLoading(true)
-    setKValue(event.target.value === "" ? "" : Number(event.target.value))
+    var newK = event.target.value === "" ? "" : Number(event.target.value)
+    if (newK < 1) {
+      newK = 1
+    } else if (newK > 5) {
+      newK = 5
+    }
+    setKValue(newK)
     if (event.target.value !== "") {
-      calcSR(Number(event.target.value), sizeValue)
+      calcSR(newK, sizeValue)
     }
   }
 
@@ -789,25 +819,31 @@ const MapboxGLMap = () => {
 
   const handleSizeInputChange = event => {
     setLoading(true)
-    setSizeValue(event.target.value === "" ? "" : Number(event.target.value))
+    var newSize = event.target.value === "" ? "" : Number(event.target.value)
+    if (newSize < 3) {
+      newSize = 3
+    } else if (newSize > 21) {
+      newSize = 21
+    }
+    setSizeValue(newSize)
     if (event.target.value !== "") {
-      calcSR(kValue, Number(event.target.value))
+      calcSR(kValue, newSize)
     }
   }
 
   const handleBlurK = () => {
-    if (kValue < 0) {
-      setKValue(0)
+    if (kValue < 1) {
+      setKValue(1)
     } else if (kValue > 5) {
       setKValue(5)
     }
   }
 
   const handleBlurSize = () => {
-    if (sizeValue < 5) {
-      setSizeValue(5)
-    } else if (sizeValue > 35) {
-      setSizeValue(35)
+    if (sizeValue < 3) {
+      setSizeValue(3)
+    } else if (sizeValue > 21) {
+      setSizeValue(21)
     }
   }
 

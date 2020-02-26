@@ -41,13 +41,18 @@ export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
     // and standard deviation in data
     hexNitrate.features[ind].properties.std_res =
       hexNitrate.features[ind].properties.res / std_dev
+    hexNitrate.features[ind].properties.abs_val_std_res = Math.abs(
+      hexNitrate.features[ind].properties.std_res
+    )
     hexNitrate.features[ind].properties.std_dev = std_dev
 
     // Mask for only Wisconsin intersecting geoms
     if (intersect(val, wisc) === null) {
-      hexNitrate.features[ind].properties.res_res = -99
+      hexNitrate.features[ind].properties.res = -99
+      hexNitrate.features[ind].properties.pred_canrate = -99
       hexNitrate.features[ind].properties.std_res = -99
       hexNitrate.features[ind].properties.std_dev = -99
+      hexNitrate.features[ind].properties.abs_val_std_res = -99
     }
   }
 
