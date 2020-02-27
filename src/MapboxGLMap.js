@@ -14,6 +14,7 @@ import LocalDrinkIcon from "@material-ui/icons/LocalDrink"
 import HomeWorkIcon from "@material-ui/icons/HomeWork"
 import BlurCircularIcon from "@material-ui/icons/BlurCircular"
 import MultilineChartIcon from "@material-ui/icons/MultilineChart"
+import GetAppIcon from "@material-ui/icons/GetApp"
 import Icon from "@mdi/react"
 import { mdiWeight } from "@mdi/js"
 import { mdiHexagonMultiple } from "@mdi/js"
@@ -66,7 +67,6 @@ const useStyles = makeStyles(uwTheme2 => ({
     paddingTop: uwTheme2.spacing(1.5),
     paddingBottom: uwTheme2.spacing(0.5)
   },
-  layerButtons: {},
   kslider: {
     width: 180
   },
@@ -80,6 +80,9 @@ const useStyles = makeStyles(uwTheme2 => ({
     width: "100%",
     position: "absolute",
     bottom: 0
+  },
+  export: {
+    marginLeft: "50"
   }
 }))
 
@@ -608,6 +611,7 @@ const MapboxGLMap = () => {
                 map.getCanvas().style.cursor = "pointer"
                 var cancer_value = features[0].properties.canrate
                 var pred_cancer_value = features[0].properties.pred_canrate
+                var r2_value = features[0].properties.r2
                 var body1 =
                   "Actual Cancer Rate: <strong>" +
                   cancer_value.toFixed(2) +
@@ -620,7 +624,11 @@ const MapboxGLMap = () => {
                   "<br />Standardized Residual: <strong>" +
                   std_res_value.toFixed(2) +
                   "</strong>"
-                setPopUp(coordinates, body1.concat(body2, body3))
+                var body4 =
+                  "<br />R^2 Value: <strong>" +
+                  r2_value.toFixed(4) +
+                  "</strong>"
+                setPopUp(coordinates, body1.concat(body2, body3, body4))
               } else {
                 map.getCanvas().style.cursor = ""
                 popup.remove()
@@ -869,12 +877,41 @@ const MapboxGLMap = () => {
     }
   }
 
+  const clickExport = () => {
+    var spatialRegressionGeoJson = map.getSource("spatial-regression-data")
+      ._data
+
+    var fileName = "spatial_regression_k-".concat(
+      kValue.toString(),
+      "_size-",
+      sizeValue.toString(),
+      ".geojson"
+    )
+    var blob = new Blob([JSON.stringify(spatialRegressionGeoJson, null, 2)], {
+      type: "application/json",
+      name: fileName
+    })
+    var url = window.URL.createObjectURL(blob)
+
+    var a = document.createElement("a")
+    document.body.appendChild(a)
+    a.style = "display: none"
+
+    a.href = url
+    a.download = fileName
+    a.click()
+
+    window.URL.revokeObjectURL(url)
+
+    console.log(fileName)
+  }
+
   const renderLegendKeys = (stop, i) => {
     var classes = "mr6 inline-block align-middle"
     if (stop[4] == "round-full") {
       classes = classes.concat(" round-full")
     }
-    console.log(classes)
+
     return (
       <div key={i} className="txt-s">
         <span
@@ -987,7 +1024,6 @@ const MapboxGLMap = () => {
                 color="primary"
                 aria-label="vertical contained primary button group"
                 variant="contained"
-                className="layerButtons"
               >
                 <StyledButton
                   color={activeWN ? "primary" : "secondary"}
@@ -1115,6 +1151,24 @@ const MapboxGLMap = () => {
                   </Grid>
                 </Grid>
               </div>
+              <ButtonGroup
+                orientation="vertical"
+                color="primary"
+                aria-label="vertical contained primary button group"
+                variant="contained"
+                style={{ marginLeft: 49, marginTop: 15 }}
+              >
+                <StyledButton
+                  color={"primary"}
+                  onClick={clickExport}
+                  startIcon={<GetAppIcon style={{ fill: "#252525" }} />}
+                  endIcon={<GetAppIcon style={{ fill: "#252525" }} />}
+                  disabled={disableSR}
+                  className={classes.export}
+                >
+                  Export
+                </StyledButton>
+              </ButtonGroup>
             </CardContent>
           </Card>
           <Legends />

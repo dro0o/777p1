@@ -25,6 +25,8 @@ export const regressionStuff = (hexNitrate, hexCancer, wisc) => {
     residuals.push(val.properties.canrate - pred[1])
     hexNitrate.features[ind].properties.pred_canrate = pred[1]
     hexNitrate.features[ind].properties.res = val.properties.canrate - pred[1]
+    hexNitrate.features[ind].properties.r2 = output.r2
+    hexNitrate.features[ind].properties.eq = output.string
   }
 
   // Calulcate standard deviation
