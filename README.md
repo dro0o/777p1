@@ -11,7 +11,7 @@
 - [TurfJS](https://turfjs.org/)
 - [RegressionJS](https://github.com/Tom-Alexander/regression-js)
 - [SimpleStatisticsJS](https://simplestatistics.org/)
-- [ShaprefileJS](https://github.com/calvinmetcalf/shapefile-js)
+- [ShapefileJS](https://github.com/calvinmetcalf/shapefile-js)
 - [Workerize-Loader](https://github.com/developit/workerize-loader)
 
 **Graduate Program**
