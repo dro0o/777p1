@@ -1,6 +1,54 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# ![](/media/nitrate_personal_favicon_26.png) Nitrate & Cancer Spatial Analysis Application
 
-## Available Scripts
+**_Spatial analysis application developed to explore the potential relationship between nitrate levels and cancer rates._**
+
+**Tech Stack**
+
+- [Mapbox GL JS](https://github.com/mapbox/mapbox-gl-js)
+- [Create React App](https://github.com/facebook/create-react-app)
+- [ReactJS](https://reactjs.org/)
+- [Material UI](https://material-ui.com/)
+- [TurfJS](https://turfjs.org/)
+- [RegressionJS](https://github.com/Tom-Alexander/regression-js)
+- [SimpleStatisticsJS](https://simplestatistics.org/)
+- [ShaprefileJS](https://github.com/calvinmetcalf/shapefile-js)
+- [Workerize-Loader](https://github.com/developit/workerize-loader)
+
+**Graduate Program**
+
+- [UW GIS WMP](https://geography.wisc.edu/gis/onlinemasters/)
+- [Capstone Project 1](https://geography.wisc.edu/gis/gis-professional-programs-course-curriculum/)
+- [Project Report](/media/777Project1_FinalReport_AndrewPittman.pdf)
+
+## ![](/media/nitrate_personal_favicon_18.png) Previews
+
+**Spatial regression layer of hexagon extrusions, showing tooltip with layer data, standardized residual, and R<sup>2</sup> value:**
+![](/media/spatialanalysis1.gif)
+
+**Nitrate point layer overlayed on normalized cancer tract layer, showing tooltip with layer data as appropriate:**
+![](/media/spatialanalysis2.gif)
+
+**Recalculating aggregation and spatial regression with web workers for seamless user experience:**
+![](/media/spatialanalysis3.gif)
+
+**Deep dive into nitrate point data and normalized cancer rates:**
+![](/media/spatialanalysis4.gif)
+
+## ![](/media/nitrate_personal_favicon_18.png) Screenshots
+
+**Only raw nitrate value and normalized cancer rate input data:**
+![](/media/raw_data.png)
+
+**Optimized inputs for highest R<sup>2</sup> value:**
+![](/media/R2_bestcase.png)
+
+## ![](/media/nitrate_personal_favicon_18.png) Branding
+
+![](/media/nitrate_personal.png)
+
+## ![](/media/nitrate_personal_favicon_18.png) Scripts
+
+![](/media/favicon.ico)
 
 In the project directory, you can run:
 
@@ -31,11 +79,11 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 **Note: this is a one-way operation. Once you `eject`, you can’t go back!**
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. <br />This command will remove the single build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Instead, it will copy all the configuration files and the transitive dependencies <br />(webpack, Babel, ESLint, etc) right into your project so you have full control over them. <br />All of the commands except `eject` will still work, but they will point to the copied scripts <br />so you can tweak them. At this point you’re on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, <br />and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t <br />be useful if you couldn’t customize it when you are ready for it.
 
 ## Learn More
 

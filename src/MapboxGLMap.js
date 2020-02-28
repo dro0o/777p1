@@ -28,6 +28,7 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import shp from "shpjs"
 
+// Import and assign initial workers
 import tagWorker from "workerize-loader!./tag" // eslint-disable-line import/no-webpack-loader-syntax
 import aggregateWorker from "workerize-loader!./aggregate" // eslint-disable-line import/no-webpack-loader-syntax
 import regressionWorker from "workerize-loader!./regression" // eslint-disable-line import/no-webpack-loader-syntax
@@ -36,12 +37,14 @@ var aggregateWorkerInstanceA = aggregateWorker()
 var aggregateWorkerInstanceB = aggregateWorker()
 var regressionWorkerInstance = regressionWorker()
 
+// Map specific styles
 const styles = {
   width: "100vw",
   height: "calc(100vh - 64px)",
   position: "absolute"
 }
 
+// Styles for various elements
 const useStyles = makeStyles(uwTheme2 => ({
   card: {
     position: "absolute",
@@ -86,6 +89,7 @@ const useStyles = makeStyles(uwTheme2 => ({
   }
 }))
 
+// Styled button for analysis panel
 const StyledButton = withStyles({
   root: {
     borderRadius: 3,
@@ -96,6 +100,7 @@ const StyledButton = withStyles({
   }
 })(Button)
 
+// Stylist decisions
 const uwTheme2 = createMuiTheme({
   palette: {
     primary: {
@@ -110,6 +115,7 @@ const uwTheme2 = createMuiTheme({
   }
 })
 
+// Legend detail data
 const options = [
   {
     name: "Spatial Regression",
@@ -158,8 +164,8 @@ const MapboxGLMap = () => {
   const [activeWN, setActiveWN] = useState(true)
   const [activeCT, setActiveCT] = useState(true)
   const [activeSR, setActiveSR] = useState(false)
-  const [kValue, setKValue] = React.useState(2)
-  const [sizeValue, setSizeValue] = React.useState(10)
+  const [kValue, setKValue] = React.useState(3)
+  const [sizeValue, setSizeValue] = React.useState(9)
   const [loading, setLoading] = React.useState(false)
   const [wisc, setWisc] = React.useState(false)
   const [disableSR, setDisableSR] = React.useState(true)
@@ -176,12 +182,13 @@ const MapboxGLMap = () => {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/dark-v10", // stylesheet location
-        center: [lng, lat],
-        zoom: zoom,
-        minZoom: 5,
-        maxBounds: bounds
+        center: [lng, lat], // starting lon/lat
+        zoom: zoom, // starting zoom
+        minZoom: 5, // constain user from zooming beyond analysis area
+        maxBounds: bounds // constrain user from panning beyond analysis area
       })
 
+      // Enable 3D viewing of map and layer data
       const navOptions = {
         visualizePitch: "true"
       }
