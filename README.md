@@ -42,6 +42,33 @@
 **Optimized inputs for highest R<sup>2</sup> value:**
 ![](/media/R2_bestcase.png)
 
+## ![](/media/nitrate_personal_favicon_18.png) Contributing
+
+- Clone the repository to your projects directory
+
+```bash
+cd /your/project/dir/
+git clone git@github.com:dro0o/777p1.git
+```
+
+- Change directory into the clone directory
+
+```bash
+cd ./777p1
+```
+
+- Setup node_modules with npm install
+
+```bash
+npm install
+```
+
+- For live editing
+
+```bash
+npm start
+```
+
 ## ![](/media/nitrate_personal_favicon_18.png) Branding
 
 ![](/media/nitrate_personal.png)
