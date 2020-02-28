@@ -172,7 +172,8 @@ const MapboxGLMap = () => {
   // const [legendID, setLegendID] = React.useState([0, 1])
 
   useEffect(() => {
-    mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_KEY
+    mapboxgl.accessToken =
+      "pk.eyJ1IjoiYWRwNjcyOSIsImEiOiJjazc2bDV6NGUwMmZtM3FtdGZzeHBtYzViIn0.7Ntw3Uk07XDmLyBL-p3TSA"
     const initializeMap = ({ setMap, mapContainer }) => {
       var bounds = [
         [-108, 28], // Southwest coordinates
@@ -206,7 +207,7 @@ const MapboxGLMap = () => {
       // Rip geojson of just wisconsin
       // For use in pairing down hexes from regression
       function resolveWisc() {
-        return fetch(process.env.PUBLIC_URL + "./geojson/wisconsin.geojson")
+        return fetch(process.env.PUBLIC_URL + "/geojson/wisconsin.geojson")
           .then(response => {
             return response.json()
           })
