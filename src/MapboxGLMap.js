@@ -210,6 +210,7 @@ const MapboxGLMap = () => {
           })
       }
 
+      // Perform these things on mapbox map load
       map.on("load", () => {
         setMap(map)
         map.resize()
@@ -535,7 +536,7 @@ const MapboxGLMap = () => {
           closeOnClick: false
         })
 
-        // Nitrate pop up spec
+        // Nitrate point pop up spec
         map.on("mouseenter", "well-nitrate-data", function(e) {
           // Change the cursor style as a UI indicator.
           map.getCanvas().style.cursor = "pointer"
@@ -561,7 +562,7 @@ const MapboxGLMap = () => {
             .addTo(map)
         })
 
-        // Remove point pop up
+        // Remove nitrate point pop up
         map.on("mouseleave", "well-nitrate-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
@@ -611,7 +612,7 @@ const MapboxGLMap = () => {
                 map.getCanvas().style.cursor = "pointer"
                 var cancer_value = features[0].properties.canrate
                 var pred_cancer_value = features[0].properties.pred_canrate
-                var r2_value = features[0].properties.r2
+                var r2_value = features[0].properties.r2 * 100
                 var body1 =
                   "Actual Cancer Rate: <strong>" +
                   cancer_value.toFixed(2) +
@@ -626,8 +627,8 @@ const MapboxGLMap = () => {
                   "</strong>"
                 var body4 =
                   "<br />R^2 Value: <strong>" +
-                  r2_value.toFixed(4) +
-                  "</strong>"
+                  r2_value.toFixed(2) +
+                  "%</strong>"
                 setPopUp(coordinates, body1.concat(body2, body3, body4))
               } else {
                 map.getCanvas().style.cursor = ""
@@ -637,13 +638,13 @@ const MapboxGLMap = () => {
           }
         })
 
-        // Remove tracts pop up
+        // Remove cancer tracts pop up
         map.on("mouseleave", "cancer-tracts-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
         })
 
-        // Remove regression pop up
+        // Remove spatial regression pop up
         map.on("mouseleave", "spatial-regression-data", function() {
           map.getCanvas().style.cursor = ""
           popup.remove()
@@ -654,6 +655,8 @@ const MapboxGLMap = () => {
     if (!map) initializeMap({ setMap, mapContainer })
   }, [map])
 
+  // Recalc spatial regression layer based on
+  // new input from aggregation user input (sliders and text input)
   const calcSR = (kValue, sizeValue) => {
     var geojsonEnriched = map.getSource("well-nitrate-data")._data
 
@@ -794,6 +797,7 @@ const MapboxGLMap = () => {
     resolveAggregateAsync(geojsonEnriched)
   }
 
+  // Well nitrate layer button click logic
   const clickWN = () => {
     activeWN ? setActiveWN(false) : setActiveWN(true)
     map.setLayoutProperty(
@@ -803,6 +807,7 @@ const MapboxGLMap = () => {
     )
   }
 
+  // Cancer tracts layer button click logic
   const clickCT = () => {
     activeCT ? setActiveCT(false) : setActiveCT(true)
     map.setLayoutProperty(
@@ -812,6 +817,7 @@ const MapboxGLMap = () => {
     )
   }
 
+  // Spatial regression layer button click logic
   const clickSR = () => {
     activeSR ? setActiveSR(false) : setActiveSR(true)
     map.setLayoutProperty(
@@ -821,6 +827,7 @@ const MapboxGLMap = () => {
     )
   }
 
+  // Logic to handle aggregation inputs (sliders/value inputs)
   const handleKSliderChange = (event, newValue) => {
     setLoading(true)
     setKValue(newValue)
@@ -877,6 +884,7 @@ const MapboxGLMap = () => {
     }
   }
 
+  // Export button functionality
   const clickExport = () => {
     var spatialRegressionGeoJson = map.getSource("spatial-regression-data")
       ._data
@@ -906,6 +914,7 @@ const MapboxGLMap = () => {
     console.log(fileName)
   }
 
+  // Render legend values
   const renderLegendKeys = (stop, i) => {
     var classes = "mr6 inline-block align-middle"
     if (stop[4] == "round-full") {
@@ -923,6 +932,7 @@ const MapboxGLMap = () => {
     )
   }
 
+  // Render legend body
   function SpecificLegend(props) {
     const id = props.id
     const mr = props.mr
@@ -945,6 +955,7 @@ const MapboxGLMap = () => {
     )
   }
 
+  // Legend logic based on layer selection and associated state
   function Legends() {
     if (activeSR && !activeWN && !activeCT) {
       return (
