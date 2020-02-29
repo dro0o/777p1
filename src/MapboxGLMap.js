@@ -1125,7 +1125,7 @@ const MapboxGLMap = () => {
                 variant="subtitle2"
                 align="right"
               >
-                Hexagon Size (sqkm)
+                Hexagon Diameter (km)
               </Typography>
               <div className={classes.kslider}>
                 <Grid container spacing={2} alignItems="center">

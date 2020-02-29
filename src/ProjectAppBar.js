@@ -43,7 +43,7 @@ const useStyles = makeStyles(uwTheme => ({
     color: "#fff"
   },
   card: {
-    maxWidth: 450
+    maxWidth: 550
   },
   media: {
     height: 300
@@ -154,8 +154,8 @@ export default function PrimarySearchAppBar() {
                   component="p"
                   gutterBottom
                 >
-                  Developed by Andrew Pittman as a part of capstone project for
-                  the University of Wisconsin Madison.
+                  Developed by Andrew Pittman as a part of a capstone project
+                  for the University of Wisconsin Madison.
                 </Typography>
               </CardContent>
             </CardActionArea>
