@@ -1,7 +1,6 @@
 # ![](/media/nitrate_personal_favicon_26.png) Nitrate & Cancer Spatial Analysis Application
 
-**_[Live](https://pittman.dev/spatialanalysis/) Spatial analysis application developed to explore the potential relationship between nitrate levels and cancer rates._**
-**[Video Overview](https://youtu.be/fQldeX4Gc7E)**
+**_[Live](https://pittman.dev/spatialanalysis/) Spatial analysis application developed to explore the potential relationship between nitrate levels and cancer rates. [Video Overview](https://youtu.be/fQldeX4Gc7E)_**
 
 **Tech Stack**
 
