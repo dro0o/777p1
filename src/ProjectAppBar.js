@@ -1,67 +1,67 @@
-import React from "react"
+import React from 'react'
 import {
   makeStyles,
   createMuiTheme,
-  ThemeProvider
-} from "@material-ui/core/styles"
-import AppBar from "@material-ui/core/AppBar"
-import Toolbar from "@material-ui/core/Toolbar"
-import IconButton from "@material-ui/core/IconButton"
-import Typography from "@material-ui/core/Typography"
-import Badge from "@material-ui/core/Badge"
-import HelpOutlineIcon from "@material-ui/icons/HelpOutline"
-import Backdrop from "@material-ui/core/Backdrop"
-import Card from "@material-ui/core/Card"
-import CardActionArea from "@material-ui/core/CardActionArea"
-import CardActions from "@material-ui/core/CardActions"
-import CardContent from "@material-ui/core/CardContent"
-import CardMedia from "@material-ui/core/CardMedia"
-import GitHubIcon from "@material-ui/icons/GitHub"
-import LinkedInIcon from "@material-ui/icons/LinkedIn"
-import EmailIcon from "@material-ui/icons/Email"
-import AccountCircleIcon from "@material-ui/icons/AccountCircle"
+  ThemeProvider,
+} from '@material-ui/core/styles'
+import AppBar from '@material-ui/core/AppBar'
+import Toolbar from '@material-ui/core/Toolbar'
+import IconButton from '@material-ui/core/IconButton'
+import Typography from '@material-ui/core/Typography'
+import Badge from '@material-ui/core/Badge'
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline'
+import Backdrop from '@material-ui/core/Backdrop'
+import Card from '@material-ui/core/Card'
+import CardActionArea from '@material-ui/core/CardActionArea'
+import CardActions from '@material-ui/core/CardActions'
+import CardContent from '@material-ui/core/CardContent'
+import CardMedia from '@material-ui/core/CardMedia'
+import GitHubIcon from '@material-ui/icons/GitHub'
+import LinkedInIcon from '@material-ui/icons/LinkedIn'
+import EmailIcon from '@material-ui/icons/Email'
+import AccountCircleIcon from '@material-ui/icons/AccountCircle'
 
-const useStyles = makeStyles(uwTheme => ({
+const useStyles = makeStyles((uwTheme) => ({
   grow: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   logo: {
     maxWidth: 35,
-    paddingRight: 15
+    paddingRight: 15,
   },
   title: {
-    display: "block"
+    display: 'block',
   },
   inputRoot: {
-    color: "inherit"
+    color: 'inherit',
   },
   sectionDesktop: {
-    display: "flex"
+    display: 'flex',
   },
   backdrop: {
     zIndex: uwTheme.zIndex.drawer + 1,
-    color: "#fff"
+    color: '#fff',
   },
   card: {
-    maxWidth: 550
+    maxWidth: 550,
   },
   media: {
-    height: 300
-  }
+    height: 300,
+  },
 }))
 
 const uwTheme = createMuiTheme({
   palette: {
     primary: {
-      main: "#252525"
+      main: '#252525',
     },
     secondary: {
-      main: "#9b0000"
-    }
+      main: '#9b0000',
+    },
   },
   status: {
-    danger: "orange"
-  }
+    danger: 'orange',
+  },
 })
 
 export default function PrimarySearchAppBar() {
@@ -77,24 +77,24 @@ export default function PrimarySearchAppBar() {
   return (
     <div className={classes.grow}>
       <ThemeProvider theme={uwTheme}>
-        <AppBar position="static">
+        <AppBar position='static'>
           <Toolbar>
             <img
-              src="nitrate_personal.png"
-              alt="logo"
+              src='nitrate_personal.png'
+              alt='logo'
               className={classes.logo}
             />
-            <Typography className={classes.title} variant="h6" noWrap>
+            <Typography className={classes.title} variant='h6' noWrap>
               Spatial Analysis: Nitrate & Cancer
             </Typography>
             <div className={classes.grow} />
             <div className={classes.sectionDesktop}>
               <IconButton
-                aria-label="HelpOutlineIcon"
-                color="inherit"
+                aria-label='HelpOutlineIcon'
+                color='inherit'
                 onClick={handleBDToggle}
               >
-                <Badge color="secondary">
+                <Badge color='secondary'>
                   <HelpOutlineIcon />
                 </Badge>
               </IconButton>
@@ -110,17 +110,17 @@ export default function PrimarySearchAppBar() {
             <CardActionArea>
               <CardMedia
                 className={classes.media}
-                image="water.jpg"
-                title="nitrate explosion"
+                image='water.jpg'
+                title='nitrate explosion'
               />
               <CardContent>
-                <Typography gutterBottom variant="h5" component="h2">
+                <Typography gutterBottom variant='h5' component='h2'>
                   Spatial Analysis: Nitrate & Cancer
                 </Typography>
                 <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  component="p"
+                  variant='body2'
+                  color='textSecondary'
+                  component='p'
                   gutterBottom
                 >
                   This web application was developed to enable exploration and
@@ -132,9 +132,9 @@ export default function PrimarySearchAppBar() {
                   state.
                 </Typography>
                 <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  component="p"
+                  variant='body2'
+                  color='textSecondary'
+                  component='p'
                   gutterBottom
                 >
                   The application uses the Inverse Distance Weighted (IDW)
@@ -149,9 +149,9 @@ export default function PrimarySearchAppBar() {
                   relationship to the explanatory variable (nitrate levels).
                 </Typography>
                 <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  component="p"
+                  variant='body2'
+                  color='textSecondary'
+                  component='p'
                   gutterBottom
                 >
                   Developed by Andrew Pittman as a part of a capstone project
@@ -161,46 +161,46 @@ export default function PrimarySearchAppBar() {
             </CardActionArea>
             <CardActions>
               <IconButton
-                variant="link"
-                aria-label="PortfolioIcon"
-                color="inherit"
-                href="https://adp6729.github.io/react-mdl-portfolio/"
-                target="_blank"
+                variant='link'
+                aria-label='PortfolioIcon'
+                color='inherit'
+                href='https://pittman.dev/'
+                target='_blank'
               >
-                <Badge color="secondary">
+                <Badge color='secondary'>
                   <AccountCircleIcon />
                 </Badge>
               </IconButton>
               <IconButton
-                variant="link"
-                aria-label="GitHubIcon"
-                color="inherit"
-                href="https://github.com/dro0o"
-                target="_blank"
+                variant='link'
+                aria-label='GitHubIcon'
+                color='inherit'
+                href='https://github.com/dro0o'
+                target='_blank'
               >
-                <Badge color="secondary">
+                <Badge color='secondary'>
                   <GitHubIcon />
                 </Badge>
               </IconButton>
               <IconButton
-                variant="link"
-                aria-label="LinkedInIcon"
-                color="inherit"
-                href="https://www.linkedin.com/in/andrew-pittman-a1618922/"
-                target="_blank"
+                variant='link'
+                aria-label='LinkedInIcon'
+                color='inherit'
+                href='https://www.linkedin.com/in/andrew-pittman-a1618922/'
+                target='_blank'
               >
-                <Badge color="secondary">
+                <Badge color='secondary'>
                   <LinkedInIcon />
                 </Badge>
               </IconButton>
               <IconButton
-                variant="link"
-                aria-label="EmailIcon"
-                color="inherit"
-                href="mailto: andrew@pittman.dev"
-                target="_blank"
+                variant='link'
+                aria-label='EmailIcon'
+                color='inherit'
+                href='mailto: andrew@pittman.dev'
+                target='_blank'
               >
-                <Badge color="secondary">
+                <Badge color='secondary'>
                   <EmailIcon />
                 </Badge>
               </IconButton>
