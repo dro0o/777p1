@@ -22,7 +22,7 @@
 
 ## ![](/media/nitrate_personal_favicon_18.png) Previews
 
-**Spatial regression layer of hexagon extrusions, showing tooltip with layer data, standardized residual, and R<sup>2</sup> value:**
+**Spatial regression layer of hexagon extrusions, showing tooltip with layer data, standardized residual, R<sup>2</sup> value:**
 ![](/media/spatialanalysis1.gif)
 
 **Nitrate point layer overlayed on normalized cancer tract layer, showing tooltip with layer data as appropriate:**
